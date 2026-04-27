@@ -162,6 +162,7 @@ class OathManager(
             @Suppress("UNCHECKED_CAST")
             when (method) {
                 "reset" -> reset()
+
                 "unlock" -> unlock(
                     args["password"] as String,
                     args["remember"] as Boolean
@@ -173,8 +174,11 @@ class OathManager(
                 )
 
                 "unsetPassword" -> unsetPassword(args["current"] as String)
+
                 "forgetPassword" -> forgetPassword()
+
                 "calculate" -> calculate(args["credentialId"] as String)
+
                 "addAccount" -> addAccount(
                     args["uri"] as String,
                     args["requireTouch"] as Boolean
