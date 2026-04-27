@@ -26,6 +26,7 @@ import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
     show encodeSvg;
 
 import '../../generated/l10n/app_localizations.dart';
+import '../../widgets/focus_border.dart';
 import '../models.dart';
 import '../state.dart';
 import 'device_picker.dart';
@@ -129,18 +130,9 @@ class _NavigationItemState extends State<NavigationItem> {
       );
     } else {
       final borderRadius = widget.borderRadius ?? BorderRadius.circular(48);
-      return ListenableBuilder(
-        listenable: _focusNode,
-        builder: (context, child) => DecoratedBox(
-          position: DecorationPosition.foreground,
-          decoration: BoxDecoration(
-            border: _focusNode.hasFocus
-                ? Border.all(color: colorScheme.primary, width: 1)
-                : null,
-            borderRadius: borderRadius,
-          ),
-          child: child!,
-        ),
+      return FocusBorder(
+        focusNode: _focusNode,
+        borderRadius: borderRadius,
         child: ListTile(
           focusNode: _focusNode,
           enabled: widget.onTap != null,
