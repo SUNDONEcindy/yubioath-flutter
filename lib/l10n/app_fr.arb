@@ -61,6 +61,7 @@
     "s_expanded": null,
     "s_collapsed": null,
     "s_show_menu": "Afficher le menu",
+    "s_menu": null,
     "s_expand_menu_bar": "Développer la barre de menu",
     "s_collapse_menu_bar": "Réduire la barre de menu",
     "s_toggle_menu_bar": "Basculer la barre de menu",

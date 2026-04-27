@@ -61,6 +61,7 @@
     "s_expanded": null,
     "s_collapsed": null,
     "s_show_menu": "Visa meny",
+    "s_menu": null,
     "s_expand_menu_bar": "Expandera menyfältet",
     "s_collapse_menu_bar": "Dölj menyfältet",
     "s_toggle_menu_bar": "Växla menyfältet",
