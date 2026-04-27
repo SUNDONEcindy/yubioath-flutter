@@ -61,6 +61,7 @@
     "s_expanded": null,
     "s_collapsed": null,
     "s_show_menu": "Εμφάνιση μενού",
+    "s_menu": null,
     "s_expand_menu_bar": "Ανάπτυξη γραμμής μενού",
     "s_collapse_menu_bar": "Σύμπτυξη γραμμής μενού",
     "s_toggle_menu_bar": "Εναλλαγή γραμμής μενού",

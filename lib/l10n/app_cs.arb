@@ -61,6 +61,7 @@
     "s_expanded": null,
     "s_collapsed": null,
     "s_show_menu": "Zobrazit nabídku",
+    "s_menu": null,
     "s_expand_menu_bar": "Rozbalit panel nabídky",
     "s_collapse_menu_bar": "Skrýt panel nabídky",
     "s_toggle_menu_bar": "Přepnout panel nabídky",

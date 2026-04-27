@@ -61,6 +61,7 @@
     "s_expanded": null,
     "s_collapsed": null,
     "s_show_menu": "Menü anzeigen",
+    "s_menu": null,
     "s_expand_menu_bar": "Menüleiste einblenden",
     "s_collapse_menu_bar": "Menüleiste ausblenden",
     "s_toggle_menu_bar": "Menüleiste anzeigen/ausblenden",

@@ -61,6 +61,7 @@
     "s_expanded": null,
     "s_collapsed": null,
     "s_show_menu": "Показать меню",
+    "s_menu": null,
     "s_expand_menu_bar": "Развернуть строку меню",
     "s_collapse_menu_bar": "Свернуть строку меню",
     "s_toggle_menu_bar": "Показать/скрыть строку меню",

@@ -61,6 +61,7 @@
     "s_expanded": null,
     "s_collapsed": null,
     "s_show_menu": "Показати меню",
+    "s_menu": null,
     "s_expand_menu_bar": "Розгорнути панель меню",
     "s_collapse_menu_bar": "Згорнути рядок меню",
     "s_toggle_menu_bar": "Перемикання рядка меню",

@@ -599,6 +599,7 @@ class _AppPageState extends ConsumerState<AppPage> {
           context: context,
           barrierColor: Colors.transparent,
           builder: (context) => FsDialog(
+            title: AppLocalizations.of(context).s_menu,
             child: Padding(
               padding: const EdgeInsets.only(top: 32),
               child: widget.keyActionsBuilder!(context),
