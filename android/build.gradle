@@ -33,6 +33,15 @@ subprojects {
     project.evaluationDependsOn(':app')
 }
 
+// Disable unit tests for Flutter plugins (not owned by this project)
+subprojects {
+    if (project.name != 'app') {
+        tasks.withType(Test).configureEach {
+            enabled = false
+        }
+    }
+}
+
 tasks.register("clean", Delete) {
     delete rootProject.layout.buildDirectory
 }
