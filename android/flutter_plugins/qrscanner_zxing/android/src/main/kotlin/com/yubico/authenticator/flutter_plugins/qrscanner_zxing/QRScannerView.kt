@@ -129,15 +129,11 @@ internal class QRScannerView(
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
     private var cameraController: LifecycleCameraController? = null
     private val barcodeAnalyzer = with(creationParams) {
-        var marginPct : Double? = null
-        if (this?.get("margin") is Number) {
-            val marginValue = this["margin"] as Number
-            if (marginValue.toDouble() > 0.0 && marginValue.toDouble() < 45) {
-                marginPct = marginValue.toDouble()
-            }
-        }
+        val overlaySizeFraction = (this?.get("overlaySizeFraction") as? Number)?.toDouble() ?: 0.65
+        val viewWidth = (this?.get("viewWidth") as? Number)?.toDouble() ?: 0.0
+        val viewHeight = (this?.get("viewHeight") as? Number)?.toDouble() ?: 0.0
 
-        BarcodeAnalyzer(marginPct) { analyzeResult ->
+        BarcodeAnalyzer(overlaySizeFraction, viewWidth, viewHeight) { analyzeResult ->
             if (analyzeResult.isSuccess) {
                 analyzeResult.getOrNull()?.let { result ->
                     reportCodeFound(result)
@@ -311,7 +307,10 @@ internal class QRScannerView(
     }
 
     private class BarcodeAnalyzer(
-        private val marginPct: Double?, private val listener: BarcodeAnalyzerListener
+        private val overlaySizeFraction: Double,
+        private val viewWidth: Double,
+        private val viewHeight: Double,
+        private val listener: BarcodeAnalyzerListener
     ) : ImageAnalysis.Analyzer {
 
         @Volatile
@@ -389,14 +388,37 @@ internal class QRScannerView(
 
                 val fullSize = BinaryBitmap(HybridBinarizer(luminanceSource))
 
-                val bitmapToProcess = if (marginPct != null && fullSize.isCropSupported) {
-                    val shorterDim = min(imageProxy.width, imageProxy.height)
-                    val cropMargin = marginPct * 0.01 * shorterDim
-                    val cropWH = shorterDim - 2.0 * cropMargin
-                    val cropT = (imageProxy.height - cropWH) / 2.0
-                    val cropL = (imageProxy.width - cropWH) / 2.0
+                val bitmapToProcess = if (overlaySizeFraction > 0 && fullSize.isCropSupported
+                    && viewWidth > 0 && viewHeight > 0) {
+                    // The PreviewView uses FILL_CENTER: it scales the image uniformly
+                    // to fill the view, then centers it (cropping overflow).
+                    // We compute which portion of the camera image corresponds to the
+                    // overlay square shown on screen.
+                    val isRotated = imageProxy.imageInfo.rotationDegrees.let {
+                        it == 90 || it == 270
+                    }
+                    // Image dimensions as displayed (after rotation)
+                    val displayedW = if (isRotated) imageProxy.height.toDouble() else imageProxy.width.toDouble()
+                    val displayedH = if (isRotated) imageProxy.width.toDouble() else imageProxy.height.toDouble()
+
+                    // FILL_CENTER scale factor
+                    val scale = maxOf(viewWidth / displayedW, viewHeight / displayedH)
+
+                    // The overlay square side in screen pixels (matches Flutter's
+                    // min(screenW, screenH) * overlaySizeFraction), then mapped to image coords
+                    val overlaySidePx = min(viewWidth, viewHeight) * overlaySizeFraction
+                    val cropWH = (overlaySidePx / scale)
+                        .coerceAtMost(min(imageProxy.width.toDouble(), imageProxy.height.toDouble()))
+
+                    // Centered crop in buffer coordinates
+                    val cropL = ((imageProxy.width - cropWH) / 2.0).coerceAtLeast(0.0)
+                    val cropT = ((imageProxy.height - cropWH) / 2.0).coerceAtLeast(0.0)
+
                     if(analyzedImagesCount == 0) {
-                        Log.v(TAG, "  bitmap l:t:w:h $cropL:$cropT:$cropWH:$cropWH")
+                        Log.v(TAG, "  rotation: ${imageProxy.imageInfo.rotationDegrees}")
+                        Log.v(TAG, "  view: ${viewWidth}x${viewHeight}, displayed: ${displayedW}x${displayedH}")
+                        Log.v(TAG, "  scale: $scale, overlaySide: $overlaySidePx, cropWH: $cropWH")
+                        Log.v(TAG, "  buffer crop l:t:w:h $cropL:$cropT:$cropWH:$cropWH")
                     }
                     fullSize.crop(
                         cropL.toInt(),

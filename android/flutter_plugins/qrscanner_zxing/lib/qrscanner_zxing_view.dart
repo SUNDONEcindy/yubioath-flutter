@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022 Yubico.
+ * Copyright (C) 2022-2026 Yubico.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 
 class QRScannerZxingView extends StatefulWidget {
-  final int marginPct;
+  final double overlaySizeFraction;
 
   /// Called when a code has been detected.
   final Function(String rawData) onDetect;
@@ -39,7 +39,7 @@ class QRScannerZxingView extends StatefulWidget {
 
   const QRScannerZxingView({
     super.key,
-    required this.marginPct,
+    required this.overlaySizeFraction,
     required this.onDetect,
     this.beforePermissionsRequest,
     required this.onViewInitialized,
@@ -99,8 +99,11 @@ class QRScannerZxingViewState extends State<QRScannerZxingView> {
   @override
   Widget build(BuildContext context) {
     const String viewType = 'qrScannerNativeView';
+    final screenSize = MediaQuery.of(context).size;
     Map<String, dynamic> creationParams = <String, dynamic>{
-      "margin": widget.marginPct,
+      "overlaySizeFraction": widget.overlaySizeFraction,
+      "viewWidth": screenSize.width,
+      "viewHeight": screenSize.height,
     };
     return PlatformViewLink(
       viewType: viewType,

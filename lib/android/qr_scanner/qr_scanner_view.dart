@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2025 Yubico.
+ * Copyright (C) 2022-2026 Yubico.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -144,7 +144,7 @@ class _QrScannerViewState extends State<QrScannerView> {
             visible: _permissionsGranted,
             child: QRScannerZxingView(
               key: _zxingViewKey,
-              marginPct: 10,
+              overlaySizeFraction: 0.65,
               onDetect: (scannedData) => handleResult(scannedData),
               onViewInitialized: (bool permissionsGranted) {
                 Future.delayed(const Duration(milliseconds: 50), () {
