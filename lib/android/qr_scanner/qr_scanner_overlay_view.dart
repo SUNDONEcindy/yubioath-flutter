@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2023 Yubico.
+ * Copyright (C) 2022-2026 Yubico.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,26 +37,27 @@ class QRScannerOverlay extends StatelessWidget {
     final renderBox =
         overlayWidgetKey.currentContext?.findRenderObject() as RenderBox;
     final renderObjectSize = renderBox.size;
-    final renderObjectOffset = renderBox.globalToLocal(Offset.zero);
+    final renderObjectOffset = renderBox.localToGlobal(Offset.zero);
 
+    // Cap the cutout size so it doesn't fill the full width in portrait.
+    // Use 65% of the shorter screen dimension as a max — this gives a
+    // consistent size that fits well in both orientations.
+    final maxSize = min(screenSize.width, screenSize.height) * 0.65;
+
+    // Clamp to actually available space
     final double shorterEdge = min(
-      renderObjectSize.width,
-      renderObjectSize.height,
+      maxSize,
+      min(renderObjectSize.width, renderObjectSize.height),
     );
 
-    var top = (size.height - shorterEdge) / 2 - 32;
-
-    if (top + renderObjectOffset.dy < 0) {
-      top = -renderObjectOffset.dy;
-    }
+    // Center the square within the overlay widget's bounds
+    final left =
+        renderObjectOffset.dx + (renderObjectSize.width - shorterEdge) / 2;
+    final top =
+        renderObjectOffset.dy + (renderObjectSize.height - shorterEdge) / 2;
 
     return RRect.fromRectAndRadius(
-      Rect.fromLTWH(
-        (size.width - shorterEdge) / 2,
-        top,
-        shorterEdge,
-        shorterEdge,
-      ),
+      Rect.fromLTWH(left, top, shorterEdge, shorterEdge),
       const Radius.circular(10),
     );
   }
@@ -119,22 +120,30 @@ class _OverlayPainter extends CustomPainter {
     canvas.drawPath(path, paint);
 
     if (_status == ScanStatus.success) {
-      const icon = Symbols.check_circle;
+      const icon = Symbols.check;
       final iconSize = overlayRRect.width < 150
           ? overlayRRect.width - 5.0
-          : 150.0;
+          : 120.0;
       TextPainter iconPainter = TextPainter(
         textDirection: .rtl,
         textAlign: .center,
       );
+
+      // Draw a green circle behind the icon
+      final circleRadius = iconSize / 2.0;
+      final circlePaint = Paint()
+        ..color = color.withAlpha(240)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(overlayRRect.center, circleRadius, circlePaint);
+
+      // Draw a white check mark
       iconPainter.text = TextSpan(
         text: String.fromCharCode(icon.codePoint),
         style: TextStyle(
           fontSize: iconSize,
           fontFamily: icon.fontFamily,
-          fontVariations: const [FontVariation('FILL', 1)],
           package: icon.fontPackage,
-          color: color.withAlpha(240),
+          color: Colors.white,
         ),
       );
       iconPainter.layout();
