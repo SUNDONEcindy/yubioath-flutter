@@ -16,16 +16,13 @@
 
 package com.yubico.authenticator
 
-import android.annotation.SuppressLint
 import android.app.Application
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener
-import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
 import android.hardware.usb.UsbDevice
@@ -86,6 +83,7 @@ import java.util.concurrent.Executors
 import javax.crypto.Mac
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.bouncycastle.jce.provider.BouncyCastleProvider
 import org.json.JSONObject
 import org.slf4j.LoggerFactory
@@ -137,10 +135,6 @@ class MainActivity : FlutterFragmentActivity() {
         Security.removeProvider("BC")
         Security.insertProviderAt(BouncyCastleProvider(), 1)
 
-        if (isPortraitOnly()) {
-            forcePortraitOrientation()
-        }
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             window.setHideOverlayWindows(true)
         }
@@ -186,12 +180,27 @@ class MainActivity : FlutterFragmentActivity() {
     private fun startUsbDiscovery() {
         logger.debug("Starting usb discovery")
         val usbConfiguration = UsbConfiguration().handlePermissions(true)
-        yubikit.startUsbDiscovery(usbConfiguration) { device ->
-            viewModel.setConnectedYubiKey(device) {
-                logger.debug("YubiKey was disconnected, stopping usb discovery")
-                stopUsbDiscovery()
+        try {
+            yubikit.startUsbDiscovery(usbConfiguration) { device ->
+                viewModel.setConnectedYubiKey(device) {
+                    logger.debug("YubiKey was disconnected, stopping usb discovery")
+                    // Defer to avoid re-entering UsbDeviceManager while its
+                    // broadcast receiver is still handling the detach event.
+                    lifecycleScope.launch(Dispatchers.Main) {
+                        stopUsbDiscovery()
+                    }
+                }
+                launchProcessYubiKey(device)
             }
-            launchProcessYubiKey(device)
+        } catch (e: Exception) {
+            logger.error("Error during startUsbDiscovery: {}", e.message)
+            // startUsbDiscovery registers an internal broadcast receiver before
+            // iterating existing USB devices. If an exception is thrown (e.g. when
+            // a YubiHSM with an unrecognized product ID is connected), the receiver
+            // remains active and will crash again on the next USB attach event.
+            // Calling stopUsbDiscovery cleans up the internal listener and
+            // unregisters the broadcast receiver.
+            stopUsbDiscovery()
         }
     }
 
@@ -272,7 +281,7 @@ class MainActivity : FlutterFragmentActivity() {
 
                 val executor = Executors.newSingleThreadExecutor()
                 val device = NfcYubiKeyDevice(tag, nfcConfiguration.timeout, executor)
-                lifecycleScope.launch {
+                lifecycleScope.launch(Dispatchers.IO) {
                     try {
                         processYubiKey(device)
                         device.remove {
@@ -303,7 +312,7 @@ class MainActivity : FlutterFragmentActivity() {
                     val device = deviceIterator.next()
                     if (device.vendorId == YUBICO_VENDOR_ID) {
                         // the device might not have a USB permission
-                        // it will be requested during during the UsbDiscovery
+                        // it will be requested during the UsbDiscovery
                         startUsbDiscovery()
                         break
                     }
@@ -318,17 +327,6 @@ class MainActivity : FlutterFragmentActivity() {
         preserveConnectionOnPause = false
     }
 
-    override fun onMultiWindowModeChanged(isInMultiWindowMode: Boolean, newConfig: Configuration) {
-        super.onMultiWindowModeChanged(isInMultiWindowMode, newConfig)
-
-        if (isPortraitOnly()) {
-            when (isInMultiWindowMode) {
-                true -> allowAnyOrientation()
-                else -> forcePortraitOrientation()
-            }
-        }
-    }
-
     private suspend fun processYubiKey(device: YubiKeyDevice) {
         if (!deviceManager.handleUsbReclaim(device)) {
             // failure handling reclaim, we cannot use the key
@@ -339,8 +337,10 @@ class MainActivity : FlutterFragmentActivity() {
             if (device is NfcYubiKeyDevice) {
                 appMethodChannel.nfcStateChanged(NfcState.ONGOING)
             }
-            getDeviceInfo(device).also {
-                deviceManager.scpKeyParams = readScpKeyParams(device, it.fipsCapable)
+            withContext(Dispatchers.IO) {
+                getDeviceInfo(device).also {
+                    deviceManager.scpKeyParams = readScpKeyParams(device, it.fipsCapable)
+                }
             }
         } catch (e: Exception) {
             logger.debug("Exception while getting device info and scp keys: ", e)
@@ -469,7 +469,7 @@ class MainActivity : FlutterFragmentActivity() {
     }
 
     private fun launchProcessYubiKey(device: YubiKeyDevice) {
-        lifecycleScope.launch {
+        lifecycleScope.launch(Dispatchers.IO) {
             processYubiKey(device)
         }
     }
@@ -522,7 +522,7 @@ class MainActivity : FlutterFragmentActivity() {
                 logger.debug("A YubiKey is connected, using it with the context {}", it.appContext)
                 viewModel.connectedYubiKey.value?.let(::launchProcessYubiKey)
             }
-            if (it.notify == true) {
+            if (it.notify) {
                 appMethodChannel.appContextChanged(it.appContext)
             }
         }
@@ -568,6 +568,7 @@ class MainActivity : FlutterFragmentActivity() {
         )
 
         contextManager = contextManagers[appPreferences.appContext]
+        contextManager?.activate()
     }
 
     private fun switchContextManager(appContext: OperationContext): Boolean {
@@ -757,6 +758,8 @@ class MainActivity : FlutterFragmentActivity() {
             }
         }
 
+        // Called directly (without dispatching) because this is only invoked from
+        // NfcAdapterStateChangedBR.onReceive, which already runs on the main thread.
         fun nfcAdapterStateChanged(value: Boolean) {
             methodChannel.invokeMethod(
                 "nfcAdapterStateChanged",
@@ -820,17 +823,6 @@ class MainActivity : FlutterFragmentActivity() {
         }
         return null
     }
-
-    @SuppressLint("SourceLockedOrientationActivity")
-    private fun forcePortraitOrientation() {
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-    }
-
-    private fun allowAnyOrientation() {
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
-    }
-
-    private fun isPortraitOnly() = resources.getBoolean(R.bool.portrait_only)
 
     private val defaultLogLevel =
         if (BuildConfig.DEBUG) Log.LogLevel.TRAFFIC else Log.LogLevel.INFO

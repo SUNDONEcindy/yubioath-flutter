@@ -61,6 +61,7 @@
     "s_expanded": null,
     "s_collapsed": null,
     "s_show_menu": "メニューを表示します",
+    "s_menu": null,
     "s_expand_menu_bar": "メニューバーを展開",
     "s_collapse_menu_bar": "メニューバーを折りたたむ",
     "s_toggle_menu_bar": "メニューバーを切り替える",
@@ -505,6 +506,7 @@
     "l_add_account_unlock_required": "ロック解除が必要です",
     "l_add_account_func_missing": "機能が存在しないか無効です",
     "l_account_name_required": "アカウントには名前を付けてください",
+    "l_field_required": null,
     "l_name_already_exists": "この名前は発行者にすでに存在します",
     "l_account_already_exists": "このアカウントは YubiKey にすでに存在します",
     "l_invalid_character_issuer": "無効な文字: 「:」は発行者には使用できません",
@@ -562,11 +564,13 @@
             }
         }
     },
-    "s_issuer_optional": "発行者 (オプション)",
     "s_counter_based": "カウンターベース",
     "s_time_based": "時間ベース",
     "l_copy_code_desc": "別のアプリケーションにコードを貼り付けてください",
     "l_calculate_code_desc": "YubiKey から新しいコードを取得します",
+    "s_account_type": null,
+    "s_period": null,
+    "s_digits": null,
     "@_fido_credentials": {},
 
     "s_rp_id": "RP ID",
@@ -751,6 +755,7 @@
     "l_key_deleted": "鍵を削除しました",
     "l_certificate_and_key_deleted": "証明書と鍵を削除しました",
     "l_include_certificate": "証明書を含める",
+    "s_destination_slot": null,
     "l_select_destination_slot": "移動先のスロットを選択",
     "q_move_key_confirm": "PIVスロット {from_slot} の秘密鍵を移動しますか？",
     "@q_move_key_confirm": {
@@ -865,6 +870,7 @@
             }
         }
     },
+    "s_keyboard_layout": null,
     "l_keyboard_layout": "キーボード {layout}",
     "@l_keyboard_layout": {
         "placeholders": {

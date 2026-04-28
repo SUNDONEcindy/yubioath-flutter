@@ -61,6 +61,7 @@
     "s_expanded": null,
     "s_collapsed": null,
     "s_show_menu": "Afficher le menu",
+    "s_menu": null,
     "s_expand_menu_bar": "Développer la barre de menu",
     "s_collapse_menu_bar": "Réduire la barre de menu",
     "s_toggle_menu_bar": "Basculer la barre de menu",
@@ -505,6 +506,7 @@
     "l_add_account_unlock_required": "Déverrouillage requis",
     "l_add_account_func_missing": "Fonctionnalité manquante ou désactivée",
     "l_account_name_required": "Votre compte doit avoir un nom",
+    "l_field_required": null,
     "l_name_already_exists": "Ce nom existe déjà pour l'émetteur",
     "l_account_already_exists": "Ce compte existe déjà sur la YubiKey",
     "l_invalid_character_issuer": "Caractère invalide\u00a0: «\u00a0:\u00a0» non autorisé dans l'émetteur",
@@ -562,11 +564,13 @@
             }
         }
     },
-    "s_issuer_optional": "Émetteur (facultatif)",
     "s_counter_based": "Basé sur compteur",
     "s_time_based": "Basé sur temps",
     "l_copy_code_desc": "Coller le code dans une autre application",
     "l_calculate_code_desc": "Obtenir un nouveau code YubiKey",
+    "s_account_type": null,
+    "s_period": null,
+    "s_digits": null,
     "@_fido_credentials": {},
 
     "s_rp_id": "RP ID",
@@ -751,6 +755,7 @@
     "l_key_deleted": "Clé supprimée",
     "l_certificate_and_key_deleted": "Certificat et clé supprimés",
     "l_include_certificate": "Inclure le certificat",
+    "s_destination_slot": null,
     "l_select_destination_slot": "Sélectionnez l'emplacement de destination",
     "q_move_key_confirm": "Déplacer la clé privée depuis l'emplacement PIV {from_slot}?",
     "@q_move_key_confirm": {
@@ -865,6 +870,7 @@
             }
         }
     },
+    "s_keyboard_layout": null,
     "l_keyboard_layout": "Clavier {layout}",
     "@l_keyboard_layout": {
         "placeholders": {

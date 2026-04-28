@@ -61,6 +61,7 @@
     "s_expanded": null,
     "s_collapsed": null,
     "s_show_menu": "Εμφάνιση μενού",
+    "s_menu": null,
     "s_expand_menu_bar": "Ανάπτυξη γραμμής μενού",
     "s_collapse_menu_bar": "Σύμπτυξη γραμμής μενού",
     "s_toggle_menu_bar": "Εναλλαγή γραμμής μενού",
@@ -505,6 +506,7 @@
     "l_add_account_unlock_required": "Απαιτείται ξεκλείδωμα",
     "l_add_account_func_missing": "Η λειτουργικότητα λείπει ή είναι απενεργοποιημένη",
     "l_account_name_required": "Ο λογαριασμός σας πρέπει να έχει όνομα",
+    "l_field_required": null,
     "l_name_already_exists": "Αυτό το όνομα υπάρχει ήδη για τον εκδότη",
     "l_account_already_exists": "Αυτός ο λογαριασμός υπάρχει ήδη στο YubiKey",
     "l_invalid_character_issuer": "Μη έγκυρος χαρακτήρας: Το ':' δεν επιτρέπεται στον εκδότη",
@@ -562,11 +564,13 @@
             }
         }
     },
-    "s_issuer_optional": "Εκδότης (προαιρετικό)",
     "s_counter_based": "Βάσει μετρητή",
     "s_time_based": "Βάσει χρόνου",
     "l_copy_code_desc": "Επικολλήστε τον κωδικό σε άλλη εφαρμογή",
     "l_calculate_code_desc": "Λάβετε νέο κωδικό από το YubiKey σας",
+    "s_account_type": null,
+    "s_period": null,
+    "s_digits": null,
     "@_fido_credentials": {},
 
     "s_rp_id": "Αναγνωριστικό RP",
@@ -751,6 +755,7 @@
     "l_key_deleted": "Το κλειδί διαγράφηκε",
     "l_certificate_and_key_deleted": "Το πιστοποιητικό και το κλειδί διαγράφηκαν",
     "l_include_certificate": "Συμπερίληψη πιστοποιητικού",
+    "s_destination_slot": null,
     "l_select_destination_slot": "Επιλογή υποδοχής προορισμού",
     "q_move_key_confirm": "Μετακίνηση του ιδιωτικού κλειδιού στην υποδοχή PIV {from_slot};",
     "@q_move_key_confirm": {
@@ -865,6 +870,7 @@
             }
         }
     },
+    "s_keyboard_layout": null,
     "l_keyboard_layout": "Πληκτρολόγιο {layout}",
     "@l_keyboard_layout": {
         "placeholders": {

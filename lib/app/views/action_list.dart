@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/state.dart';
+import '../../widgets/focus_border.dart';
 import '../../widgets/list_title.dart';
 import '../../widgets/tooltip_if_truncated.dart';
 import '../models.dart';
@@ -31,6 +32,7 @@ class ActionListItem extends StatefulWidget {
   final ActionStyle actionStyle;
   final Feature? feature;
   final double? borderRadius;
+  final TextStyle? titleStyle;
 
   const ActionListItem({
     super.key,
@@ -42,6 +44,7 @@ class ActionListItem extends StatefulWidget {
     this.actionStyle = ActionStyle.normal,
     this.feature,
     this.borderRadius,
+    this.titleStyle,
   });
 
   @override
@@ -70,24 +73,17 @@ class _ActionListItemState extends State<ActionListItem> {
               // on a disabled item
             }
           : null,
-      child: ListenableBuilder(
-        listenable: _focusNode,
-        builder: (context, child) => DecoratedBox(
-          position: DecorationPosition.foreground,
-          decoration: BoxDecoration(
-            border: _focusNode.hasFocus
-                ? Border.all(color: colorScheme.primary, width: 1)
-                : null,
-            borderRadius: borderRadius,
-          ),
-          child: child!,
-        ),
+      child: FocusBorder(
+        focusNode: _focusNode,
+        borderRadius: borderRadius,
         child: ListTile(
           focusNode: _focusNode,
           shape: RoundedRectangleBorder(borderRadius: borderRadius),
           title: TooltipIfTruncated(
             text: widget.title,
-            style: TextStyle(fontSize: theme.textTheme.bodyLarge!.fontSize),
+            style: TextStyle(
+              fontSize: theme.textTheme.bodyLarge!.fontSize,
+            ).merge(widget.titleStyle),
           ),
           subtitle: widget.subtitle != null
               ? TooltipIfTruncated(

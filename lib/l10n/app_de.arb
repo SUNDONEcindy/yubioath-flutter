@@ -61,6 +61,7 @@
     "s_expanded": null,
     "s_collapsed": null,
     "s_show_menu": "Menü anzeigen",
+    "s_menu": null,
     "s_expand_menu_bar": "Menüleiste einblenden",
     "s_collapse_menu_bar": "Menüleiste ausblenden",
     "s_toggle_menu_bar": "Menüleiste anzeigen/ausblenden",
@@ -505,6 +506,7 @@
     "l_add_account_unlock_required": "Freischaltung erforderlich",
     "l_add_account_func_missing": "Funktion nicht verfügbar oder deaktiviert",
     "l_account_name_required": "Dein Konto muss einen Namen haben",
+    "l_field_required": null,
     "l_name_already_exists": "Dieser Name wird für diesen Aussteller bereits verwendet",
     "l_account_already_exists": "Dieses Konto existiert bereits auf dem YubiKey",
     "l_invalid_character_issuer": "Ungültiges Zeichen: ':' ist im Feld für Aussteller nicht erlaubt",
@@ -562,11 +564,13 @@
             }
         }
     },
-    "s_issuer_optional": "Anbieter/Dienst (optional)",
     "s_counter_based": "Zähler-basiert",
     "s_time_based": "Zeit-basiert",
     "l_copy_code_desc": "Füge den Code in einer anderen Anwendung ein",
     "l_calculate_code_desc": "Erhalte einen neuen Code von deinem YubiKey",
+    "s_account_type": null,
+    "s_period": null,
+    "s_digits": null,
     "@_fido_credentials": {},
 
     "s_rp_id": "RP ID",
@@ -751,6 +755,7 @@
     "l_key_deleted": "Schlüssel gelöscht",
     "l_certificate_and_key_deleted": "Zertifikat und Schlüssel gelöscht",
     "l_include_certificate": "Zertifikat einbeziehen",
+    "s_destination_slot": null,
     "l_select_destination_slot": "Ziel-Slot wählen",
     "q_move_key_confirm": "Soll der private Schlüssel in  PIV Slot {from_slot} verschoben werden?",
     "@q_move_key_confirm": {
@@ -865,6 +870,7 @@
             }
         }
     },
+    "s_keyboard_layout": null,
     "l_keyboard_layout": "Tastatur {layout}",
     "@l_keyboard_layout": {
         "placeholders": {

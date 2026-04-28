@@ -32,6 +32,7 @@ import '../../core/models.dart';
 import '../../core/state.dart';
 import '../../generated/l10n/app_localizations.dart';
 import '../../management/models.dart';
+import '../../widgets/focus_border.dart';
 import 'key_actions.dart';
 import 'manage_label_dialog.dart';
 
@@ -427,7 +428,6 @@ class _ColorButtonState extends State<_ColorButton> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final iconColor =
         ThemeData.estimateBrightnessForColor(widget.color) == Brightness.light
         ? Colors.black.withValues(alpha: 0.6)
@@ -437,38 +437,35 @@ class _ColorButtonState extends State<_ColorButton> {
       label: widget.colorName,
       onTap: widget.onPressed,
       selected: widget.isSelected,
-      child: ListenableBuilder(
-        listenable: _focusNode,
-        builder: (context, child) => DecoratedBox(
-          position: DecorationPosition.foreground,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: _focusNode.hasFocus
-                ? Border.all(color: colorScheme.primary, width: 1)
-                : null,
-          ),
-          child: child!,
-        ),
+      child: FocusBorder(
+        focusNode: _focusNode,
+        shape: BoxShape.circle,
         child: ExcludeSemantics(
           excluding: isAndroid,
-          child: RawMaterialButton(
-            focusNode: _focusNode,
-            onPressed: widget.onPressed,
-            constraints: const BoxConstraints(minWidth: 26.0, minHeight: 26.0),
-            fillColor: widget.color,
-            hoverColor: Colors.black12,
-            shape: const CircleBorder(),
-            child: Icon(
-              widget.isDefault && !widget.isSelected
-                  ? Symbols.clear
-                  : Symbols.circle,
-              fill: 1,
-              size: 16,
-              weight: widget.isDefault ? 700 : null,
-              opticalSize: widget.isDefault ? 20 : null,
-              color: !widget.isDefault && !widget.isSelected
-                  ? Colors.transparent
-                  : iconColor,
+          child: Tooltip(
+            message: widget.colorName,
+            child: RawMaterialButton(
+              focusNode: _focusNode,
+              onPressed: widget.onPressed,
+              constraints: const BoxConstraints(
+                minWidth: 26.0,
+                minHeight: 26.0,
+              ),
+              fillColor: widget.color,
+              hoverColor: Colors.black12,
+              shape: const CircleBorder(),
+              child: Icon(
+                widget.isDefault && !widget.isSelected
+                    ? Symbols.clear
+                    : Symbols.circle,
+                fill: 1,
+                size: 16,
+                weight: widget.isDefault ? 700 : null,
+                opticalSize: widget.isDefault ? 20 : null,
+                color: !widget.isDefault && !widget.isSelected
+                    ? Colors.transparent
+                    : iconColor,
+              ),
             ),
           ),
         ),

@@ -61,6 +61,7 @@
     "s_expanded": null,
     "s_collapsed": null,
     "s_show_menu": "Показати меню",
+    "s_menu": null,
     "s_expand_menu_bar": "Розгорнути панель меню",
     "s_collapse_menu_bar": "Згорнути рядок меню",
     "s_toggle_menu_bar": "Перемикання рядка меню",
@@ -505,6 +506,7 @@
     "l_add_account_unlock_required": "Потрібне розблокування",
     "l_add_account_func_missing": "Функціональність відсутня або вимкнена",
     "l_account_name_required": "Ваш обліковий запис повинен мати ім'я",
+    "l_field_required": null,
     "l_name_already_exists": "Це ім'я вже існує для емітента",
     "l_account_already_exists": "Цей обліковий запис вже існує на YubiKey",
     "l_invalid_character_issuer": "Недійсний символ: ':' не дозволено в емітенті",
@@ -562,11 +564,13 @@
             }
         }
     },
-    "s_issuer_optional": "Емітент (необов'язково)",
     "s_counter_based": "На основі лічильника",
     "s_time_based": "Залежно від часу",
     "l_copy_code_desc": "Вставте код в іншу програму",
     "l_calculate_code_desc": "Отримайте новий код з вашого YubiKey",
+    "s_account_type": null,
+    "s_period": null,
+    "s_digits": null,
     "@_fido_credentials": {},
 
     "s_rp_id": "Ідентифікатор RP",
@@ -751,6 +755,7 @@
     "l_key_deleted": "Ключ видалено",
     "l_certificate_and_key_deleted": "Сертифікат і ключ видалено",
     "l_include_certificate": "Включити сертифікат",
+    "s_destination_slot": null,
     "l_select_destination_slot": "Виберіть слот призначення",
     "q_move_key_confirm": "Перемістити закритий ключ у слот PIV {from_slot}?",
     "@q_move_key_confirm": {
@@ -865,6 +870,7 @@
             }
         }
     },
+    "s_keyboard_layout": null,
     "l_keyboard_layout": "Розкладка клавіатури {layout}",
     "@l_keyboard_layout": {
         "placeholders": {

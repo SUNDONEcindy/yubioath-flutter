@@ -61,6 +61,7 @@
     "s_expanded": null,
     "s_collapsed": null,
     "s_show_menu": "แสดงเมนู",
+    "s_menu": null,
     "s_expand_menu_bar": null,
     "s_collapse_menu_bar": null,
     "s_toggle_menu_bar": "สลับแถบเมนู",
@@ -505,6 +506,7 @@
     "l_add_account_unlock_required": "จำเป็นต้องปลดล็อก",
     "l_add_account_func_missing": "ฟังก์ชันการทำงานขาดหายไปหรือถูกปิดใช้งาน",
     "l_account_name_required": "บัญชีของคุณต้องมีชื่อ",
+    "l_field_required": null,
     "l_name_already_exists": "ชื่อนี้มีอยู่แล้วสำหรับผู้ออก",
     "l_account_already_exists": "บัญชีนี้มีอยู่แล้วบน ยูบิคีย์",
     "l_invalid_character_issuer": "อักขระไม่ถูกต้อง: ไม่อนุญาตให้ใช้อักขระ ':' ในผู้ออก",
@@ -562,11 +564,13 @@
             }
         }
     },
-    "s_issuer_optional": "ผู้ออก (ทางเลือก)",
     "s_counter_based": "อิงตัวนับ",
     "s_time_based": "อิงเวลา",
     "l_copy_code_desc": "วางรหัสไปที่อื่น",
     "l_calculate_code_desc": "รับรหัสใหม่จาก ยูบิคีย์ ของคุณ",
+    "s_account_type": null,
+    "s_period": null,
+    "s_digits": null,
     "@_fido_credentials": {},
 
     "s_rp_id": "รหัสประจำตัว RP",
@@ -751,6 +755,7 @@
     "l_key_deleted": "ลบคีย์แล้ว",
     "l_certificate_and_key_deleted": "ใบรับรองและคีย์ถูกลบแล้ว",
     "l_include_certificate": "รวมใบรับรอง",
+    "s_destination_slot": null,
     "l_select_destination_slot": "เลือกสล็อตปลายทาง",
     "q_move_key_confirm": "ย้ายกุญเเจส่วนตัวในช่อง PIV {from_slot}?",
     "@q_move_key_confirm": {
@@ -865,6 +870,7 @@
             }
         }
     },
+    "s_keyboard_layout": null,
     "l_keyboard_layout": "คีย์บอร์ด {layout}",
     "@l_keyboard_layout": {
         "placeholders": {
