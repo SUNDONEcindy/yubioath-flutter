@@ -5,6 +5,14 @@
     <uses-permission android:name="android.permission.NFC" />
     <uses-permission android:name="android.permission.HIDE_OVERLAY_WINDOWS" />
 
+    <!-- Pulled in transitively by androidx.media3 (via CameraX camera-video, a
+         dependency of the QR scanner). The app does no networking, so strip it
+         from the merged manifest to keep "view network connections" off the
+         Play Store permission list. Enforced by app/permission_guard.gradle.kts. -->
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE"
+        tools:node="remove" />
+
     <uses-feature
         android:name="android.hardware.usb.host"
         android:required="false" />
