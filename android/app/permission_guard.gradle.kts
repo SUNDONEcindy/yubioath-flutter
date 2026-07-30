@@ -1,7 +1,7 @@
 import com.android.build.api.artifact.SingleArtifact
 import com.android.build.api.variant.ApplicationAndroidComponentsExtension
 
-// Build-time guard against permission creep in the shipped APK.
+// Build-time guard against permission creep in the shipped APK/AAB.
 //
 // Manifest merging folds every <uses-permission> declared by our transitive
 // dependencies into the final APK, and each one surfaces on the Play Store
@@ -58,7 +58,14 @@ extensions.configure<ApplicationAndroidComponentsExtension> {
                 doLast {
                     // uses-permission elements are self-closing, so the first '>'
                     // ends the tag; (?s) lets attributes span multiple lines.
-                    val manifestText = mergedManifest.get().asFile.readText()
+                    // Strip XML comments first so a commented-out <uses-permission>
+                    // (which AGP or a library may emit) is not counted as declared.
+                    val manifestText =
+                        mergedManifest
+                            .get()
+                            .asFile
+                            .readText()
+                            .replace(Regex("(?s)<!--.*?-->"), "")
                     val declared =
                         usesPermissionRegex
                             .findAll(manifestText)
@@ -92,10 +99,13 @@ extensions.configure<ApplicationAndroidComponentsExtension> {
                 }
             }
 
-        // Block APK assembly on the guard so `flutter build apk` (and CI) fail
-        // when an unexpected permission slips in.
-        afterEvaluate {
-            tasks.named("assemble$capitalizedName").configure { dependsOn(checkTask) }
-        }
+        // Block both APK and AAB release builds on the guard so `flutter build
+        // apk`, `flutter build appbundle`, and CI all fail when an unexpected
+        // permission slips in. The Play Store listing is driven by the AAB, so
+        // gating only assemble would leave a gap. `matching { }.configureEach`
+        // is lazy and safe whether or not the build tasks exist yet, avoiding a
+        // redundant afterEvaluate wrapper inside this onVariants callback.
+        val buildTaskNames = setOf("assemble$capitalizedName", "bundle$capitalizedName")
+        tasks.matching { it.name in buildTaskNames }.configureEach { dependsOn(checkTask) }
     }
 }
