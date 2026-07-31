@@ -33,8 +33,6 @@ class OtpViewModel : ViewModel() {
         _currentSerial.postValue(serial)
     }
 
-    fun state(): OtpState? = (_state.value as? ViewModelData.Value<*>)?.data as? OtpState?
-
     fun setState(state: OtpState) {
         _state.postValue(ViewModelData.Value(state))
     }

@@ -37,8 +37,6 @@ class PivViewModel : ViewModel() {
         _currentSerial.postValue(serial)
     }
 
-    fun state(): PivState? = (_state.value as? ViewModelData.Value<*>)?.data as? PivState?
-
     fun setState(state: PivState) {
         _state.postValue(ViewModelData.Value(state))
     }
