@@ -19,13 +19,12 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/l10n_utils.dart';
 import '../../app/logging.dart';
 import '../../app/message.dart';
 import '../../app/models.dart';
@@ -95,6 +94,30 @@ class _ConfigureYubiOtpDialogState
   final publicIdLength = 12;
   final privateIdLength = 12;
 
+  /// The "can be uploaded at upload.yubico.com" footer.
+  ///
+  /// Built here rather than in [build] because it owns a `TapGestureRecognizer`
+  /// that nothing disposes, and this dialog rebuilds on every keystroke.
+  late Text _uploadText;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    _uploadText = injectLinksInText(
+      l10n.l_exported_can_be_uploaded_at(uploadOtpUri.host),
+      {uploadOtpUri.host: uploadOtpUri},
+      textStyle: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+      linkStyle: TextStyle(
+        color: theme.colorScheme.primary,
+        decoration: TextDecoration.underline,
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _secretController.dispose();
@@ -126,8 +149,6 @@ class _ConfigureYubiOtpDialogState
 
     final outputFile = ref.read(yubiOtpOutputProvider);
     final exportSelected = isAndroid ? _exportRequested : outputFile != null;
-
-    _createUploadText(context, l10n);
 
     void submit() async {
       bool hasError = false;
@@ -550,7 +571,7 @@ class _ConfigureYubiOtpDialogState
                         ),
                       ],
                     ),
-                    _createUploadText(context, l10n),
+                    _uploadText,
                   ]
                   .map(
                     (e) => Padding(
@@ -561,43 +582,6 @@ class _ConfigureYubiOtpDialogState
                   .toList(),
         ),
       ),
-    );
-  }
-
-  RichText _createUploadText(BuildContext context, AppLocalizations l10n) {
-    final uploadText = l10n.l_exported_can_be_uploaded_at(uploadOtpUri.host);
-    final host = uploadOtpUri.host;
-    final parts = uploadText.split(RegExp('(?=$host)|(?<=$host)'));
-
-    return RichText(
-      textScaler: MediaQuery.textScalerOf(context),
-      text: TextSpan(
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-        children: [
-          ...parts.map(
-            (e) => e == uploadOtpUri.host
-                ? _createUploadOtpLink(context)
-                : TextSpan(text: e),
-          ),
-        ],
-      ),
-    );
-  }
-
-  TextSpan _createUploadOtpLink(BuildContext context) {
-    final theme = Theme.of(context);
-    return TextSpan(
-      text: uploadOtpUri.host,
-      style: theme.textTheme.bodySmall?.copyWith(
-        color: theme.colorScheme.primary,
-        decoration: TextDecoration.underline,
-      ),
-      recognizer: TapGestureRecognizer()
-        ..onTap = () async {
-          await launchUrl(uploadOtpUri, mode: LaunchMode.externalApplication);
-        },
     );
   }
 }
