@@ -20,6 +20,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../app/models.dart';
 import '../../core/models.dart';
+import '../../core/state.dart';
 import '../../exception/cancellation_exception.dart';
 import '../../generated/l10n/app_localizations.dart';
 import '../../widgets/app_input_decoration.dart';
@@ -132,7 +133,9 @@ class _AccessCodeDialogState extends ConsumerState<AccessCodeDialog> {
                         _accessCodeController.text,
                       ),
                       inputFormatters: [limitBytesLength(accessCodeLength)],
-                      autofillHints: const [AutofillHints.password],
+                      autofillHints: isAndroid
+                          ? []
+                          : const [AutofillHints.password],
                       controller: _accessCodeController,
                       focusNode: _accessCodeFocus,
                       decoration: AppInputDecoration(
