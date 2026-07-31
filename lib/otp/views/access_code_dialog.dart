@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 Yubico.
+ * Copyright (C) 2024-2026 Yubico.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../app/models.dart';
 import '../../core/models.dart';
+import '../../exception/cancellation_exception.dart';
 import '../../generated/l10n/app_localizations.dart';
 import '../../widgets/app_input_decoration.dart';
 import '../../widgets/app_text_field.dart';
@@ -87,6 +88,9 @@ class _AccessCodeDialogState extends ConsumerState<AccessCodeDialog> {
       final navigator = Navigator.of(context);
       await widget.action(_accessCodeController.text);
       navigator.pop(true);
+    } on CancellationException {
+      // The user dismissed the NFC overlay, the access code was never checked.
+      return;
     } catch (e) {
       _accessCodeController.selection = TextSelection(
         baseOffset: 0,

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023-2025 Yubico.
+ * Copyright (C) 2023-2026 Yubico.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../app/message.dart';
 import '../../app/models.dart';
 import '../../app/state.dart';
+import '../../exception/cancellation_exception.dart';
 import '../../generated/l10n/app_localizations.dart';
 import '../../widgets/basic_dialog.dart';
 import '../keys.dart';
@@ -47,6 +48,9 @@ class SwapSlotsDialog extends ConsumerWidget {
                 Navigator.of(context).pop();
                 showMessage(context, l10n.l_slots_swapped);
               });
+            } on CancellationException {
+              // The user dismissed the NFC overlay, nothing was swapped.
+              return;
             } catch (e) {
               await ref.read(withContextProvider)((context) async {
                 Navigator.of(context).pop();

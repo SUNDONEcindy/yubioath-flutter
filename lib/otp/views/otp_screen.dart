@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2025 Yubico.
+ * Copyright (C) 2022-2026 Yubico.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,9 @@ import '../../app/views/app_failure_page.dart';
 import '../../app/views/app_list_item.dart';
 import '../../app/views/app_page.dart';
 import '../../app/views/message_page.dart';
+import '../../app/views/message_page_not_initialized.dart';
 import '../../core/state.dart';
+import '../../exception/no_data_exception.dart';
 import '../../generated/l10n/app_localizations.dart';
 import '../../management/models.dart';
 import '../../widgets/list_title.dart';
@@ -67,7 +69,12 @@ class _OtpScreenState extends ConsumerState<OtpScreen> {
             graphic: const CircularProgressIndicator(),
             delayedContent: true,
           ),
-          error: (error, _) => AppFailurePage(cause: error),
+          error: (error, _) => error is NoDataException
+              ? MessagePageNotInitialized(
+                  title: l10n.s_slots,
+                  capabilities: const [Capability.otp],
+                )
+              : AppFailurePage(cause: error),
           data: (otpState) {
             final selected = _selected != null
                 ? otpState.slots.firstWhere((e) => e.slot == _selected)
