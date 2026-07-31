@@ -102,19 +102,24 @@ class _ConfigureStaticDialogState extends ConsumerState<ConfigureStaticDialog> {
     ).hasMatch(password);
 
     void submit() async {
+      _passwordFocus.unfocus();
+
       if (password.isEmpty) {
+        _passwordFocus.requestFocus();
         setState(() {
           _passwordError = l10n.l_field_required;
         });
         return;
       }
       if (!passwordLengthValid) {
+        _passwordFocus.requestFocus();
         setState(() {
           _passwordError = l10n.s_invalid_length;
         });
         return;
       }
       if (!passwordFormatValid) {
+        _passwordFocus.requestFocus();
         setState(() {
           _passwordError = l10n.l_invalid_keyboard_character;
         });

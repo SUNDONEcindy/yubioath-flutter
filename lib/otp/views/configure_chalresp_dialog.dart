@@ -79,13 +79,17 @@ class _ConfigureChalrespDialogState
     final secretFormatValid = Format.hex.isValid(secret);
 
     void submit() async {
+      _secretFocus.unfocus();
+
       if (secret.isEmpty) {
+        _secretFocus.requestFocus();
         setState(() {
           _secretError = l10n.l_field_required;
         });
         return;
       }
       if (!secretFormatValid) {
+        _secretFocus.requestFocus();
         setState(() {
           _secretError = l10n.l_invalid_format_allowed_chars(
             Format.hex.allowedCharacters,
@@ -94,6 +98,7 @@ class _ConfigureChalrespDialogState
         return;
       }
       if (!secretLengthValid) {
+        _secretFocus.requestFocus();
         setState(() {
           _secretError = l10n.s_invalid_length;
         });

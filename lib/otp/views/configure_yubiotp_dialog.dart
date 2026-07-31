@@ -129,6 +129,12 @@ class _ConfigureYubiOtpDialogState
     super.dispose();
   }
 
+  void _removeFocus() {
+    _publicIdFocus.unfocus();
+    _privateIdFocus.unfocus();
+    _secretFocus.unfocus();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -151,48 +157,53 @@ class _ConfigureYubiOtpDialogState
     final exportSelected = isAndroid ? _exportRequested : outputFile != null;
 
     void submit() async {
-      bool hasError = false;
+      _removeFocus();
+
+      // The first field that failed validation, refocused so the user can
+      // correct it.
+      FocusNode? invalidField;
 
       if (publicId.isEmpty) {
         _publicIdError = l10n.l_field_required;
-        hasError = true;
+        invalidField ??= _publicIdFocus;
       } else if (!publicIdFormatValid) {
         _publicIdError = l10n.l_invalid_format_allowed_chars(
           Format.modhex.allowedCharacters,
         );
-        hasError = true;
+        invalidField ??= _publicIdFocus;
       } else if (!publicIdLengthValid) {
         _publicIdError = l10n.s_invalid_length;
-        hasError = true;
+        invalidField ??= _publicIdFocus;
       }
 
       if (privateId.isEmpty) {
         _privateIdError = l10n.l_field_required;
-        hasError = true;
+        invalidField ??= _privateIdFocus;
       } else if (!privateIdFormatValid) {
         _privateIdError = l10n.l_invalid_format_allowed_chars(
           Format.hex.allowedCharacters,
         );
-        hasError = true;
+        invalidField ??= _privateIdFocus;
       } else if (!privateIdLengthValid) {
         _privateIdError = l10n.s_invalid_length;
-        hasError = true;
+        invalidField ??= _privateIdFocus;
       }
 
       if (secret.isEmpty) {
         _secretError = l10n.l_field_required;
-        hasError = true;
+        invalidField ??= _secretFocus;
       } else if (!secretFormatValid) {
         _secretError = l10n.l_invalid_format_allowed_chars(
           Format.hex.allowedCharacters,
         );
-        hasError = true;
+        invalidField ??= _secretFocus;
       } else if (!secretLengthValid) {
         _secretError = l10n.s_invalid_length;
-        hasError = true;
+        invalidField ??= _secretFocus;
       }
 
-      if (hasError) {
+      if (invalidField != null) {
+        invalidField.requestFocus();
         setState(() {});
         return;
       }

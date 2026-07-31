@@ -61,9 +61,12 @@ class _AccessCodeDialogState extends ConsumerState<AccessCodeDialog> {
   }
 
   void _submit() async {
+    _accessCodeFocus.unfocus();
+
     final l10n = AppLocalizations.of(context);
     final accessCode = _accessCodeController.text.replaceAll(' ', '');
     if (accessCode.isEmpty) {
+      _accessCodeFocus.requestFocus();
       setState(() {
         _accessCodeIsWrong = true;
         _accessCodeError = l10n.l_field_required;
