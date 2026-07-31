@@ -152,7 +152,7 @@ class _AccessCodeDialogState extends ConsumerState<AccessCodeDialog> {
                           hideLabel: l10n.s_hide_access_code,
                         ),
                       ),
-                      textInputAction: .next,
+                      textInputAction: .done,
                       onChanged: (value) {
                         setState(() {
                           _accessCodeIsWrong = false;

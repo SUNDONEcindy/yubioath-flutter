@@ -236,7 +236,7 @@ class _ConfigureStaticDialogState extends ConsumerState<ConfigureStaticDialog> {
                           },
                         ),
                       ),
-                      textInputAction: .next,
+                      textInputAction: .done,
                       onChanged: (value) {
                         setState(() {
                           _passwordError = null;

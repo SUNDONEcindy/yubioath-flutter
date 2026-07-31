@@ -201,7 +201,7 @@ class _ConfigureHotpDialogState extends ConsumerState<ConfigureHotpDialog> {
                           hideLabel: l10n.s_hide_secret_key,
                         ),
                       ),
-                      textInputAction: .next,
+                      textInputAction: .done,
                       onChanged: (value) {
                         setState(() {
                           _secretError = null;

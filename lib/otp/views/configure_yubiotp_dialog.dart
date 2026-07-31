@@ -383,7 +383,7 @@ class _ConfigureYubiOtpDialogState
                         });
                       },
                       onSubmitted: (_) {
-                        if (publicIdLengthValid) {
+                        if (publicId.isNotEmpty) {
                           _privateIdFocus.requestFocus();
                         } else {
                           _publicIdFocus.requestFocus();
@@ -435,7 +435,7 @@ class _ConfigureYubiOtpDialogState
                         });
                       },
                       onSubmitted: (_) {
-                        if (privateIdLengthValid) {
+                        if (privateId.isNotEmpty) {
                           _secretFocus.requestFocus();
                         } else {
                           _privateIdFocus.requestFocus();
@@ -478,7 +478,7 @@ class _ConfigureYubiOtpDialogState
                           },
                         ),
                       ),
-                      textInputAction: .next,
+                      textInputAction: .done,
                       onChanged: (value) {
                         setState(() {
                           _secretError = null;

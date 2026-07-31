@@ -214,7 +214,7 @@ class _ConfigureChalrespDialogState
                           tooltip: l10n.s_generate_random,
                         ),
                       ),
-                      textInputAction: .next,
+                      textInputAction: .done,
                       onChanged: (value) {
                         setState(() {
                           _secretError = null;
