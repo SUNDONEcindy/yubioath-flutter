@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -25,7 +24,6 @@ import 'package:logging/logging.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../app/app.dart';
-import '../app/features.dart' as features;
 import '../app/logging.dart';
 import '../app/models.dart';
 import '../app/state.dart';
@@ -34,6 +32,7 @@ import '../core/state.dart';
 import '../fido/state.dart';
 import '../management/state.dart';
 import '../oath/state.dart';
+import '../otp/state.dart';
 import '../piv/state.dart';
 import 'app_methods.dart';
 import 'fido/state.dart';
@@ -41,6 +40,7 @@ import 'logger.dart';
 import 'management/state.dart';
 import 'oath/otp_auth_link_handler.dart';
 import 'oath/state.dart';
+import 'otp/state.dart';
 import 'overlay/nfc/nfc_event_notifier.dart';
 import 'overlay/nfc/nfc_overlay.dart';
 import 'piv/state.dart';
@@ -95,6 +95,7 @@ Future<Widget> initialize({Level? level}) async {
         Section.fingerprints,
         Section.passkeys,
         Section.certificates,
+        Section.slots,
         Section.settings,
       ]),
       // this specifies the priority of sections to show when
@@ -104,6 +105,7 @@ Future<Widget> initialize({Level? level}) async {
         Section.fingerprints,
         Section.passkeys,
         Section.certificates,
+        Section.slots,
         Section.home,
         Section.settings,
       ]),
@@ -120,21 +122,15 @@ Future<Widget> initialize({Level? level}) async {
       fidoStateProvider.overrideWith2(AndroidFidoStateNotifier.new),
       fingerprintProvider.overrideWith2(AndroidFidoFingerprintsNotifier.new),
       credentialProvider.overrideWith2(AndroidFidoCredentialsNotifier.new),
+
+      // OTP
+      otpStateProvider.overrideWith2(AndroidOtpStateNotifier.new),
     ],
     child: DismissKeyboard(
       child: YubicoAuthenticatorApp(
         page: Consumer(
           builder: (context, ref, child) {
             ref.read(nfcEventNotifierListener).startListener(context);
-
-            Timer.run(() {
-              ref
-                  .read(featureFlagProvider.notifier)
-                  // TODO: Load feature flags from file/config?
-                  //..loadConfig(config)
-                  // Disable unimplemented feature
-                  .setFeature(features.otp, false);
-            });
 
             // activates window state provider
             ref.read(androidWindowStateProvider);

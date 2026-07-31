@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2025 Yubico.
+ * Copyright (C) 2022-2026 Yubico.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -90,11 +90,14 @@ void setupAppMethodsChannel(WidgetRef ref) {
       case 'appContextChanged':
         {
           var appContext = args['appContext'];
+          // Keep in sync with OperationContext in MainViewModel.kt
           var section = switch (appContext) {
             0 => Section.home,
             1 => Section.accounts,
             3 => Section.fingerprints,
             4 => Section.passkeys,
+            5 => Section.certificates,
+            6 => Section.slots,
             7 => Section.settings,
             _ => Section.home,
           };
