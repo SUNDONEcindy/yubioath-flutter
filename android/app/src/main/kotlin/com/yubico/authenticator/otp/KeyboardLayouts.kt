@@ -18,6 +18,7 @@ package com.yubico.authenticator.otp
 
 import com.yubico.authenticator.otp.scancodes.bepoScancodes
 import com.yubico.authenticator.otp.scancodes.deScancodes
+import com.yubico.authenticator.otp.scancodes.dechScancodes
 import com.yubico.authenticator.otp.scancodes.frScancodes
 import com.yubico.authenticator.otp.scancodes.itScancodes
 import com.yubico.authenticator.otp.scancodes.modhexScancodes
@@ -27,21 +28,22 @@ import com.yubico.authenticator.otp.scancodes.usScancodes
 import java.security.SecureRandom
 
 /**
- * Character to HID scancode maps for static password programming.
+ * Character to HID scancode maps, used both to program a static password slot and to decode an
+ * NDEF payload typed by the key.
  *
  * This is the Kotlin counterpart of python-yubikey-manager's `ykman.scancodes` package and
  * `ykman.otp.generate_static_pw`; the layout names and character sets must stay identical to
  * the desktop implementation, because the shared Flutter UI treats them as opaque identifiers
  * coming from [layouts].
  *
- * Note this is unrelated to `com.yubico.authenticator.ndef.KeyboardLayout`, which maps in the
- * opposite direction (scancode to character) for decoding NDEF payloads.
+ * Decoding runs the same tables backwards, so the two directions cannot drift apart.
  */
 object KeyboardLayouts {
     /** Characters never used when generating a random password (`ykman.otp`). */
     private val PW_CHAR_BLOCKLIST = setOf('\t', '\n', ' ')
 
-    private val layouts: Map<String, Map<Char, Int>> =
+    /** Layouts a slot can be programmed with. Exactly the `ykman.scancodes` set, in its order. */
+    private val otpLayouts: Map<String, Map<Char, Int>> =
         linkedMapOf(
             "MODHEX" to modhexScancodes,
             "US" to usScancodes,
@@ -53,14 +55,59 @@ object KeyboardLayouts {
             "NORMAN" to normanScancodes
         )
 
+    /**
+     * Layouts an NDEF payload can be decoded with: [otpLayouts] plus Swiss German, which ykman
+     * does not know and which is therefore decode-only. See [dechScancodes].
+     */
+    private val ndefLayouts: Map<String, Map<Char, Int>> =
+        otpLayouts + ("DE-CH" to dechScancodes)
+
+    /**
+     * Scancode to character, derived from [ndefLayouts].
+     *
+     * The first character wins where a layout types one scancode from two keys - ykman's `de`
+     * maps both `?` and `` ` `` to `0x2D | SHIFT`, and `?` is the one a German keyboard produces.
+     */
+    private val decodeMaps: Map<String, Map<Int, Char>> by lazy {
+        ndefLayouts.mapValues { (_, scancodes) ->
+            val decoded = LinkedHashMap<Int, Char>(scancodes.size)
+            scancodes.forEach { (char, scancode) ->
+                if (scancode !in decoded) decoded[scancode] = char
+            }
+            decoded
+        }
+    }
+
     private val secureRandom = SecureRandom()
 
     private fun layout(name: String): Map<Char, Int> =
-        layouts[name] ?: throw IllegalArgumentException("Unsupported keyboard layout: $name")
+        otpLayouts[name] ?: throw IllegalArgumentException("Unsupported keyboard layout: $name")
 
     /** The characters each layout can type, keyed by layout name. */
-    fun layouts(): Map<String, List<String>> = layouts.mapValues { (_, map) ->
+    fun layouts(): Map<String, List<String>> = otpLayouts.mapValues { (_, map) ->
         map.keys.map(Char::toString)
+    }
+
+    /** The layout names an NDEF payload can be decoded with, in display order. */
+    fun ndefLayoutNames(): List<String> = ndefLayouts.keys.toList()
+
+    /**
+     * Decodes HID [scancodes] typed with the layout called [layoutName].
+     *
+     * Scancodes the layout has no character for are dropped rather than rendered, so a payload
+     * that was typed with a different layout degrades instead of throwing.
+     *
+     * @throws IllegalArgumentException if the layout is unknown.
+     */
+    fun decode(scancodes: ByteArray, layoutName: String): String {
+        val characters =
+            decodeMaps[layoutName]
+                ?: throw IllegalArgumentException("Unsupported keyboard layout: $layoutName")
+        return buildString(scancodes.size) {
+            scancodes.forEach { scancode ->
+                characters[scancode.toInt() and 0xFF]?.let(::append)
+            }
+        }
     }
 
     /**

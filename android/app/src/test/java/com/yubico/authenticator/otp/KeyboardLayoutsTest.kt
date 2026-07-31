@@ -110,7 +110,104 @@ class KeyboardLayoutsTest {
         }
     }
 
+    @Test
+    fun `ndef layouts are the otp layouts plus Swiss German`() {
+        assertEquals(EXPECTED_NDEF_LAYOUTS, KeyboardLayouts.ndefLayoutNames())
+        // DE-CH is decode-only: ykman has no such layout, so a slot programmed with it could not
+        // be reproduced on the desktop.
+        assertTrue("DE-CH" !in KeyboardLayouts.layouts())
+    }
+
+    @Test
+    fun `decode inverts encode for every typeable character`() {
+        EXPECTED_CHARACTERS.keys.forEach { name ->
+            KeyboardLayouts.layouts().getValue(name).forEach { character ->
+                val encoded = KeyboardLayouts.encode(character, name)
+                val decoded = KeyboardLayouts.decode(encoded, name)
+                // Not `decoded == character`: ykman's `de` types both `?` and `` ` `` from
+                // 0x2D | SHIFT, so decoding is only unique up to the scancode.
+                assertEquals(
+                    "$name does not round-trip '$character'",
+                    encoded.toHexString(),
+                    KeyboardLayouts.encode(decoded, name).toHexString()
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `decode matches ykman scancodes`() {
+        assertEquals("hello", KeyboardLayouts.decode(scancodes(0x0B, 0x08, 0x0F, 0x0F, 0x12), "US"))
+        assertEquals(
+            "Hello!",
+            KeyboardLayouts.decode(scancodes(0x8B, 0x08, 0x0F, 0x0F, 0x12, 0x9E), "US")
+        )
+        assertEquals(
+            "bcdefV",
+            KeyboardLayouts.decode(scancodes(0x05, 0x06, 0x07, 0x08, 0x09, 0x99), "MODHEX")
+        )
+    }
+
+    /**
+     * The hand-written table this replaced decoded these from the US layout by mistake, so a
+     * German static password came back with the wrong characters.
+     */
+    @Test
+    fun `decode fixes the German characters the old ndef table got wrong`() {
+        assertEquals("ä", KeyboardLayouts.decode(scancodes(0x34), "DE")) // was '
+        assertEquals("'", KeyboardLayouts.decode(scancodes(0xB2), "DE")) // was >
+        // The ISO key next to the left shift; the old table's arrays stopped at 0x3F.
+        assertEquals("<", KeyboardLayouts.decode(scancodes(0x64), "DE"))
+        assertEquals(">", KeyboardLayouts.decode(scancodes(0xE4), "DE"))
+    }
+
+    @Test
+    fun `decode prefers the question mark over the backtick on DE`() {
+        // ykman's `de` maps both to 0x2D | SHIFT; `?` is what the key actually types.
+        assertEquals("?", KeyboardLayouts.decode(scancodes(0xAD), "DE"))
+    }
+
+    @Test
+    fun `decode handles Swiss German`() {
+        assertEquals(
+            "äÄöü§è",
+            KeyboardLayouts.decode(scancodes(0x34, 0xB4, 0x33, 0x2F, 0x35, 0xAF), "DE-CH")
+        )
+    }
+
+    @Test
+    fun `decode drops scancodes the layout cannot type`() {
+        // 0xB5 is unmapped in ykman's `de`; the old table wrongly rendered it as '.
+        assertEquals("ab", KeyboardLayouts.decode(scancodes(0x04, 0xB5, 0x05), "DE"))
+        assertEquals("", KeyboardLayouts.decode(scancodes(0x04), "MODHEX"))
+    }
+
+    @Test
+    fun `decode of empty input is empty`() {
+        assertEquals("", KeyboardLayouts.decode(ByteArray(0), "US"))
+    }
+
+    @Test
+    fun `decode rejects an unknown layout`() {
+        assertThrows(IllegalArgumentException::class.java) {
+            KeyboardLayouts.decode(scancodes(0x04), "DVORAK")
+        }
+        // Programming layouts are a subset; DE-CH must not become encodable by accident.
+        assertThrows(IllegalArgumentException::class.java) {
+            KeyboardLayouts.encode("a", "DE-CH")
+        }
+    }
+
+    private fun scancodes(vararg codes: Int) = ByteArray(codes.size) { codes[it].toByte() }
+
     companion object {
+        /**
+         * [KeyboardLayouts.ndefLayoutNames], mirrored by `androidNfcSupportedKbdLayoutsProvider`
+         * in `lib/android/state.dart`. Update both together.
+         */
+        private val EXPECTED_NDEF_LAYOUTS =
+            listOf("MODHEX", "US", "UK", "DE", "FR", "IT", "BEPO", "NORMAN", "DE-CH")
+
         /** Character sets of `ykman.scancodes.KEYBOARD_LAYOUT`, in insertion order. */
         private val EXPECTED_CHARACTERS: Map<String, String> =
             linkedMapOf(

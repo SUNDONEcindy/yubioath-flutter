@@ -106,7 +106,6 @@ spotless {
     kotlin {
         target("**/*.kt")
         targetExclude("**/generated/*.kt")
-        targetExclude("src/**/ndef/**KeyboardLayout.kt")
         ktlint().editorConfigOverride([ktlint_code_style: "android_studio"])
     }
 
