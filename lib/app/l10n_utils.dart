@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Yubico.
+ * Copyright (C) 2025-2026 Yubico.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,34 +20,39 @@ import 'package:url_launcher/url_launcher.dart';
 
 /// Creates [RichText] from [text] where the keys of [urls] are replaced
 /// with clickable links.
+///
+/// Each link owns a [TapGestureRecognizer], which Flutter does not dispose on
+/// its own. A caller that rebuilds the returned [Text] more than once (e.g. from
+/// [State.didChangeDependencies]) should pass a [recognizers] list to collect
+/// them and dispose each one when it is done, otherwise they leak.
 Text injectLinksInText(
   String text,
   Map<String, Uri> urls, {
   TextStyle? textStyle,
   TextStyle? linkStyle,
+  List<TapGestureRecognizer>? recognizers,
 }) {
   final keys = urls.keys.toList();
-  // Split text by keys and keep the keys
-  final pattern = RegExp(
-    r'(?=(' + keys.join('|') + r'))|(?<=(' + keys.join('|') + r'))',
-  );
+  // Split text by keys and keep the keys. Escape each key so a URL containing regex
+  // metacharacters (the dots in a host, say) is matched literally, not as a pattern.
+  final alternation = keys.map(RegExp.escape).join('|');
+  final pattern = RegExp('(?=($alternation))|(?<=($alternation))');
   final parts = text.split(pattern);
 
   List<TextSpan> spans = [];
   int index = 0;
   for (var part in parts) {
     if (keys.contains(part)) {
+      final recognizer = TapGestureRecognizer()
+        ..onTap = () async {
+          await launchUrl(urls[part]!, mode: LaunchMode.externalApplication);
+        };
+      recognizers?.add(recognizer);
       spans.add(
         TextSpan(
           text: part,
           style: linkStyle,
-          recognizer: TapGestureRecognizer()
-            ..onTap = () async {
-              await launchUrl(
-                urls[part]!,
-                mode: LaunchMode.externalApplication,
-              );
-            },
+          recognizer: recognizer,
           children: [
             if (index == parts.length - 1)
               // without this the recognizer takes over whole row

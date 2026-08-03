@@ -34,7 +34,6 @@ import com.yubico.yubikit.yubiotp.YubiOtpSession
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 import java.io.IOException
-import org.json.JSONObject
 import org.slf4j.LoggerFactory
 
 class OtpManager(
@@ -69,22 +68,22 @@ class OtpManager(
                 // The remaining methods are pure computation. They deliberately do not go
                 // through the connection helper: requiring a YubiKey here would pop the NFC
                 // overlay while the user is still filling in a dialog.
-                "generateStaticPassword" -> JSONObject(
+                "generateStaticPassword" -> jsonSerializer.encodeToString(
                     mapOf(
                         "password" to KeyboardLayouts.generate(
                             args["length"] as Int,
                             args["layout"] as String
                         )
                     )
-                ).toString()
+                )
 
-                "modhexEncodeSerial" -> JSONObject(
+                "modhexEncodeSerial" -> jsonSerializer.encodeToString(
                     mapOf("encoded" to OtpUtils.modhexEncodeSerial(args["serial"] as Int))
-                ).toString()
+                )
 
                 "getKeyboardLayouts" -> jsonSerializer.encodeToString(KeyboardLayouts.layouts())
 
-                "formatYubiOtpCsv" -> JSONObject(
+                "formatYubiOtpCsv" -> jsonSerializer.encodeToString(
                     mapOf(
                         "csv" to OtpUtils.formatYubiOtpCsv(
                             args["serial"] as Int,
@@ -93,7 +92,7 @@ class OtpManager(
                             args["key"] as String
                         )
                     )
-                ).toString()
+                )
 
                 else -> throw NotImplementedError()
             }

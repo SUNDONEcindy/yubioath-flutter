@@ -19,6 +19,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
@@ -96,15 +97,21 @@ class _ConfigureYubiOtpDialogState
 
   /// The "can be uploaded at upload.yubico.com" footer.
   ///
-  /// Built here rather than in [build] because it owns a `TapGestureRecognizer`
-  /// that nothing disposes, and this dialog rebuilds on every keystroke.
+  /// Built here rather than in [build] because it owns a `TapGestureRecognizer`,
+  /// and this dialog rebuilds on every keystroke.
   late Text _uploadText;
+
+  /// The recognizers backing the links in [_uploadText], disposed in [dispose].
+  final List<TapGestureRecognizer> _uploadLinkRecognizers = [];
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    // didChangeDependencies can fire more than once (e.g. on a theme or locale
+    // change); drop the previous build's recognizers before creating new ones.
+    _disposeUploadLinkRecognizers();
     _uploadText = injectLinksInText(
       l10n.l_exported_can_be_uploaded_at(uploadOtpUri.host),
       {uploadOtpUri.host: uploadOtpUri},
@@ -115,7 +122,15 @@ class _ConfigureYubiOtpDialogState
         color: theme.colorScheme.primary,
         decoration: TextDecoration.underline,
       ),
+      recognizers: _uploadLinkRecognizers,
     );
+  }
+
+  void _disposeUploadLinkRecognizers() {
+    for (final recognizer in _uploadLinkRecognizers) {
+      recognizer.dispose();
+    }
+    _uploadLinkRecognizers.clear();
   }
 
   @override
@@ -126,6 +141,7 @@ class _ConfigureYubiOtpDialogState
     _secretFocus.dispose();
     _publicIdFocus.dispose();
     _privateIdFocus.dispose();
+    _disposeUploadLinkRecognizers();
     super.dispose();
   }
 
@@ -254,10 +270,14 @@ class _ConfigureYubiOtpDialogState
         });
       }
 
+      // The CSV starts with the serial, so a key that does not report one cannot be
+      // exported. Guard here rather than on the export chip: over NFC the serial is
+      // unknown until the tap, which is after the dialog is built.
+      final serial = info?.serial;
       String? exportedFileName;
-      if (configurationSucceeded && exportSelected) {
+      if (configurationSucceeded && exportSelected && serial != null) {
         final csv = await otpNotifier.formatYubiOtpCsv(
-          info!.serial!,
+          serial,
           publicId,
           privateId,
           secret,
@@ -266,15 +286,18 @@ class _ConfigureYubiOtpDialogState
         if (isAndroid) {
           // Only now, with the CSV in hand, can the destination be picked: the SAF dialog
           // both creates the document and writes to it in one shot.
+          final fileName = 'yubico-otp-$publicId.csv';
           final savedPath = await FilePicker.platform.saveFile(
             dialogTitle: l10n.l_export_configuration_file,
             allowedExtensions: ['csv'],
-            fileName: 'yubico-otp-$publicId.csv',
+            fileName: fileName,
             type: FileType.custom,
             bytes: utf8.encode('$csv\n'),
           );
-          // A null path means the user backed out of the save dialog.
-          exportedFileName = savedPath?.split('/').last;
+          // A null path means the user backed out of the save dialog. SAF returns an
+          // opaque content:// URI rather than a filesystem path, so surface the name we
+          // asked it to write instead of parsing the returned location.
+          exportedFileName = savedPath != null ? fileName : null;
         } else {
           await outputFile!.writeAsString(
             '$csv${Platform.lineTerminator}',

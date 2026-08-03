@@ -48,11 +48,32 @@ class KeyboardLayoutsTest {
 
     @Test
     fun `encode matches ykman scancodes`() {
+        // The expected scancodes are the output of `ykman.scancodes.encode` for the same input,
+        // so this pins the actual HID keystrokes the desktop helper would send, not just the set
+        // of characters a layout can type. A single mis-ported hex value drifts one of these.
         assertEquals("0b080f0f12", KeyboardLayouts.encode("hello", "US").toHexString())
         assertEquals("8b080f0f129e", KeyboardLayouts.encode("Hello!", "US").toHexString())
         assertEquals("050607080999", KeyboardLayouts.encode("bcdefV", "MODHEX").toHexString())
         // Characters which only exist in a non-US layout.
         assertEquals("34b32d", KeyboardLayouts.encode("\u00e4\u00d6\u00df", "DE").toHexString())
+        // NORMAN shares US's character set but not its scancodes, so ASCII alone catches drift.
+        assertEquals("330712120f", KeyboardLayouts.encode("hello", "NORMAN").toHexString())
+        assertEquals(
+            "040506a0b59f",
+            KeyboardLayouts.encode("abc\u00a3\u00ac\"", "UK").toHexString()
+        )
+        assertEquals(
+            "14051f242726",
+            KeyboardLayouts.encode("ab\u00e9\u00e8\u00e0\u00e7", "FR").toHexString()
+        )
+        assertEquals(
+            "04052f33342e",
+            KeyboardLayouts.encode("ab\u00e8\u00f2\u00e0\u00ec", "IT").toHexString()
+        )
+        assertEquals(
+            "04141a171d31",
+            KeyboardLayouts.encode("ab\u00e9\u00e8\u00e0\u00e7", "BEPO").toHexString()
+        )
     }
 
     @Test
