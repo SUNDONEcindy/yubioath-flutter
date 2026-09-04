@@ -1,21 +1,32 @@
 repos:
 # Flutter
+#
+# These run through `env -u GIT_DIR` because git exports an absolute GIT_DIR to
+# its hooks when the checkout is a linked worktree. The Flutter tool shells out
+# to git inside FLUTTER_ROOT to read its own version, that call inherits the
+# variable and inspects this repository instead, and the SDK version resolves to
+# 0.0.0-unknown, which makes `pub get` fail. In a main checkout git exports a
+# relative `.git`, which is why this only bites in worktrees.
 - repo: local
   hooks:
     - id: flutter-l10n-gen
       name: generate-l10n
       language: system
-      entry: flutter gen-l10n
+      entry: env -u GIT_DIR flutter gen-l10n
       pass_filenames: false
       require_serial: true
-- repo: https://github.com/dluksza/flutter-analyze-pre-commit
-  rev: "4afcaa82fc368d40d486256bf4edba329bf667bb"
-  hooks:
     - id: dart-format
+      name: Dart Code format
+      language: system
+      entry: env -u GIT_DIR dart format
       files: \.dart$
       exclude: lib/generated
       require_serial: true
     - id: flutter-analyze
+      name: Flutter Code Analyze
+      language: system
+      entry: env -u GIT_DIR flutter analyze
+      files: \.dart$
       exclude: lib/generated
       require_serial: true
 - repo: local

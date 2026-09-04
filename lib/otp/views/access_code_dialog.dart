@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024-2025 Yubico.
+ * Copyright (C) 2024-2026 Yubico.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../app/models.dart';
 import '../../core/models.dart';
+import '../../core/state.dart';
+import '../../exception/cancellation_exception.dart';
 import '../../generated/l10n/app_localizations.dart';
 import '../../widgets/app_input_decoration.dart';
 import '../../widgets/app_text_field.dart';
@@ -60,9 +62,12 @@ class _AccessCodeDialogState extends ConsumerState<AccessCodeDialog> {
   }
 
   void _submit() async {
+    _accessCodeFocus.unfocus();
+
     final l10n = AppLocalizations.of(context);
     final accessCode = _accessCodeController.text.replaceAll(' ', '');
     if (accessCode.isEmpty) {
+      _accessCodeFocus.requestFocus();
       setState(() {
         _accessCodeIsWrong = true;
         _accessCodeError = l10n.l_field_required;
@@ -87,6 +92,9 @@ class _AccessCodeDialogState extends ConsumerState<AccessCodeDialog> {
       final navigator = Navigator.of(context);
       await widget.action(_accessCodeController.text);
       navigator.pop(true);
+    } on CancellationException {
+      // The user dismissed the NFC overlay, the access code was never checked.
+      return;
     } catch (e) {
       _accessCodeController.selection = TextSelection(
         baseOffset: 0,
@@ -125,7 +133,9 @@ class _AccessCodeDialogState extends ConsumerState<AccessCodeDialog> {
                         _accessCodeController.text,
                       ),
                       inputFormatters: [limitBytesLength(accessCodeLength)],
-                      autofillHints: const [AutofillHints.password],
+                      autofillHints: isAndroid
+                          ? []
+                          : const [AutofillHints.password],
                       controller: _accessCodeController,
                       focusNode: _accessCodeFocus,
                       decoration: AppInputDecoration(
@@ -145,7 +155,7 @@ class _AccessCodeDialogState extends ConsumerState<AccessCodeDialog> {
                           hideLabel: l10n.s_hide_access_code,
                         ),
                       ),
-                      textInputAction: .next,
+                      textInputAction: .done,
                       onChanged: (value) {
                         setState(() {
                           _accessCodeIsWrong = false;

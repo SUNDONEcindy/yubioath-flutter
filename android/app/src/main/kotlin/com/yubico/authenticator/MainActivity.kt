@@ -51,6 +51,8 @@ import com.yubico.authenticator.management.ManagementManager
 import com.yubico.authenticator.oath.AppLinkMethodChannel
 import com.yubico.authenticator.oath.OathManager
 import com.yubico.authenticator.oath.OathViewModel
+import com.yubico.authenticator.otp.OtpManager
+import com.yubico.authenticator.otp.OtpViewModel
 import com.yubico.authenticator.piv.PivManager
 import com.yubico.authenticator.piv.PivViewModel
 import com.yubico.authenticator.yubikit.DeviceInfoHelper.Companion.getDeviceInfo
@@ -97,6 +99,7 @@ class MainActivity : FlutterFragmentActivity() {
     private val oathViewModel: OathViewModel by viewModels()
     private val fidoViewModel: FidoViewModel by viewModels()
     private val pivViewModel: PivViewModel by viewModels()
+    private val otpViewModel: OtpViewModel by viewModels()
 
     private val nfcConfiguration = NfcConfiguration().timeout(5000)
 
@@ -445,6 +448,7 @@ class MainActivity : FlutterFragmentActivity() {
                     OperationContext.FidoPasskeys,
                     OperationContext.FidoFingerprints,
                     OperationContext.Piv,
+                    OperationContext.YubiOtp,
                     OperationContext.Home
                 )
 
@@ -525,7 +529,8 @@ class MainActivity : FlutterFragmentActivity() {
             fidoViewModel.resetState.streamTo(this, messenger, "android.fido.reset"),
             fidoViewModel.registerFingerprint.streamTo(this, messenger, "android.fido.registerFp"),
             pivViewModel.state.streamTo(this, messenger, "android.piv.state"),
-            pivViewModel.slots.streamTo(this, messenger, "android.piv.slots")
+            pivViewModel.slots.streamTo(this, messenger, "android.piv.slots"),
+            otpViewModel.state.streamTo(this, messenger, "android.otp.state")
         )
 
         viewModel.appContext.observe(this) {
@@ -564,6 +569,11 @@ class MainActivity : FlutterFragmentActivity() {
             deviceManager,
             pivViewModel
         )
+        val otpContextManager = OtpManager(
+            messenger,
+            deviceManager,
+            otpViewModel
+        )
         val managementContextManager = ManagementManager(messenger, deviceManager)
 
         contextManagers = mapOf(
@@ -573,11 +583,11 @@ class MainActivity : FlutterFragmentActivity() {
             OperationContext.FidoFingerprints to fidoContextManager,
             OperationContext.Management to managementContextManager,
             OperationContext.Piv to pivContextManager,
+            OperationContext.YubiOtp to otpContextManager,
             // currently not supported
             OperationContext.FidoU2f to homeContextManager,
             OperationContext.HsmAuth to homeContextManager,
             OperationContext.OpenPgp to homeContextManager,
-            OperationContext.YubiOtp to homeContextManager,
             OperationContext.Settings to homeContextManager
         )
 

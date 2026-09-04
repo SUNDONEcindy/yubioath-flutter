@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2025 Yubico.
+ * Copyright (C) 2022-2026 Yubico.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import android.nfc.Tag
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
-import com.yubico.authenticator.ndef.KeyboardLayout
+import com.yubico.authenticator.otp.KeyboardLayouts
 import com.yubico.yubikit.core.util.NdefUtils
 import java.nio.charset.StandardCharsets
 import java.util.Locale
@@ -119,8 +119,9 @@ class NdefActivity : Activity() {
         return if (ndefPayloadBytes.all { it in 32..126 }) {
             OtpSlotValue(OtpType.Otp, String(ndefPayloadBytes, StandardCharsets.US_ASCII))
         } else {
-            val kbd: KeyboardLayout = KeyboardLayout.forName(appPreferences.clipKbdLayout)
-            OtpSlotValue(OtpType.Password, kbd.fromScanCodes(ndefPayloadBytes))
+            val password =
+                KeyboardLayouts.decode(ndefPayloadBytes, appPreferences.clipKbdLayout)
+            OtpSlotValue(OtpType.Password, password)
         }
     }
 

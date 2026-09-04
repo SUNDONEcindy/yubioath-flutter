@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023 Yubico.
+ * Copyright (C) 2023-2026 Yubico.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../app/message.dart';
 import '../../app/models.dart';
 import '../../app/state.dart';
+import '../../exception/cancellation_exception.dart';
 import '../../generated/l10n/app_localizations.dart';
 import '../../widgets/basic_dialog.dart';
 import '../keys.dart' as keys;
@@ -51,6 +52,9 @@ class DeleteSlotDialog extends ConsumerWidget {
             try {
               await otpStateNotifier.deleteSlot(otpSlot.slot);
               deleteSucceeded = true;
+            } on CancellationException {
+              // The user dismissed the NFC overlay, this is not an access code failure.
+              return;
             } catch (e) {
               // Access code required
               await ref.read(withContextProvider)((context) async {

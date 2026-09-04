@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2025 Yubico.
+ * Copyright (C) 2022-2026 Yubico.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -71,6 +71,30 @@ Future<void> setPrimaryClip(String toClipboard, bool isSensitive) async {
   });
 }
 
+/// Maps an `appContextChanged` payload to the [Section] it selects.
+///
+/// [appContext] is an `OperationContext` value from `MainViewModel.kt`, which
+/// numbers its entries to match the declaration order of [Section]. The two
+/// enums are a wire contract and must be changed together — inserting a
+/// [Section] in the middle shifts every later index and silently reroutes those
+/// contexts here. `OperationContextTest.kt` pins the Kotlin values;
+/// `app_methods_test.dart` mirrors the ones that reach Dart and asserts that the
+/// two enums still line up.
+///
+/// Contexts that Android never reports as a section — `FidoU2f` (2), `OpenPgp`,
+/// `HsmAuth` and `Management`, none of which are in `supportedSectionsProvider`
+/// — fall back to [Section.home], as does any unknown value.
+Section sectionFromAppContext(int appContext) => switch (appContext) {
+  0 => Section.home,
+  1 => Section.accounts,
+  3 => Section.fingerprints,
+  4 => Section.passkeys,
+  5 => Section.certificates,
+  6 => Section.slots,
+  7 => Section.settings,
+  _ => Section.home,
+};
+
 void setupAppMethodsChannel(WidgetRef ref) {
   appMethodsChannel.setMethodCallHandler((call) async {
     final args = jsonDecode(call.arguments);
@@ -90,14 +114,7 @@ void setupAppMethodsChannel(WidgetRef ref) {
       case 'appContextChanged':
         {
           var appContext = args['appContext'];
-          var section = switch (appContext) {
-            0 => Section.home,
-            1 => Section.accounts,
-            3 => Section.fingerprints,
-            4 => Section.passkeys,
-            7 => Section.settings,
-            _ => Section.home,
-          };
+          var section = sectionFromAppContext(appContext);
 
           // use Android specific notifier to set the current section
           // don't notify, as we just received the section

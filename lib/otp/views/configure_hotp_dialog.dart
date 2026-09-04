@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023-2025 Yubico.
+ * Copyright (C) 2023-2026 Yubico.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import '../../app/models.dart';
 import '../../app/state.dart';
 import '../../core/models.dart';
 import '../../core/state.dart';
+import '../../exception/cancellation_exception.dart';
 import '../../generated/l10n/app_localizations.dart';
 import '../../oath/models.dart';
 import '../../widgets/app_input_decoration.dart';
@@ -76,13 +77,17 @@ class _ConfigureHotpDialogState extends ConsumerState<ConfigureHotpDialog> {
     final secretFormatValid = Format.base32.isValid(secret);
 
     void submit() async {
+      _secretFocus.unfocus();
+
       if (secret.isEmpty) {
+        _secretFocus.requestFocus();
         setState(() {
           _secretError = l10n.l_field_required;
         });
         return;
       }
       if (!secretFormatValid) {
+        _secretFocus.requestFocus();
         setState(() {
           _secretError = l10n.l_invalid_format_allowed_chars(
             Format.base32.allowedCharacters,
@@ -91,6 +96,7 @@ class _ConfigureHotpDialogState extends ConsumerState<ConfigureHotpDialog> {
         return;
       }
       if (!secretLengthValid) {
+        _secretFocus.requestFocus();
         setState(() {
           _secretError = l10n.s_invalid_length;
         });
@@ -119,6 +125,9 @@ class _ConfigureHotpDialogState extends ConsumerState<ConfigureHotpDialog> {
           configuration: configuration,
         );
         configurationSucceeded = true;
+      } on CancellationException {
+        // The user dismissed the NFC overlay, this is not an access code failure.
+        return;
       } catch (e) {
         _log.error('Failed to program credential', e);
         // Access code required
@@ -192,7 +201,7 @@ class _ConfigureHotpDialogState extends ConsumerState<ConfigureHotpDialog> {
                           hideLabel: l10n.s_hide_secret_key,
                         ),
                       ),
-                      textInputAction: .next,
+                      textInputAction: .done,
                       onChanged: (value) {
                         setState(() {
                           _secretError = null;

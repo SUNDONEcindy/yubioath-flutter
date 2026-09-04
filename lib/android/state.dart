@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2025 Yubico.
+ * Copyright (C) 2022-2026 Yubico.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -287,9 +287,13 @@ class NfcTapActionNotifier extends StateNotifier<NfcTapAction> {
   }
 }
 
-// TODO: Get these from Android
+/// Layouts an NDEF static password can be decoded with.
+///
+/// Hand-kept in sync with `KeyboardLayouts.ndefLayoutNames()` on the Kotlin side, which a unit
+/// test pins. A channel round-trip is not worth it here: this provider is read synchronously
+/// during `build`, and the settings page must not depend on OTP state.
 final androidNfcSupportedKbdLayoutsProvider = Provider<List<String>>(
-  (ref) => ['US', 'DE', 'DE-CH'],
+  (ref) => ['MODHEX', 'US', 'UK', 'DE', 'FR', 'IT', 'BEPO', 'NORMAN', 'DE-CH'],
 );
 
 final androidNfcKbdLayoutProvider =

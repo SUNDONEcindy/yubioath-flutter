@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2023-2025 Yubico.
+ * Copyright (C) 2023-2026 Yubico.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
@@ -23,14 +24,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:logging/logging.dart';
 import 'package:material_symbols_icons/symbols.dart';
-import 'package:url_launcher/url_launcher.dart';
 
+import '../../app/l10n_utils.dart';
 import '../../app/logging.dart';
 import '../../app/message.dart';
 import '../../app/models.dart';
 import '../../app/state.dart';
 import '../../core/models.dart';
 import '../../core/state.dart';
+import '../../exception/cancellation_exception.dart';
 import '../../generated/l10n/app_localizations.dart';
 import '../../widgets/app_input_decoration.dart';
 import '../../widgets/app_text_field.dart';
@@ -79,6 +81,12 @@ class _ConfigureYubiOtpDialogState
   final _privateIdController = TextEditingController();
   final _privateIdFocus = FocusNode();
   OutputActions _action = OutputActions.noOutput;
+
+  /// Android only: the user asked for a CSV export, but has not picked a destination yet.
+  ///
+  /// The Storage Access Framework needs the file contents when the picker opens, so the
+  /// destination is only chosen once the slot has been programmed.
+  bool _exportRequested = false;
   bool _appendEnter = true;
   String? _publicIdError;
   String? _privateIdError;
@@ -86,6 +94,44 @@ class _ConfigureYubiOtpDialogState
   final secretLength = 32;
   final publicIdLength = 12;
   final privateIdLength = 12;
+
+  /// The "can be uploaded at upload.yubico.com" footer.
+  ///
+  /// Built here rather than in [build] because it owns a `TapGestureRecognizer`,
+  /// and this dialog rebuilds on every keystroke.
+  late Text _uploadText;
+
+  /// The recognizers backing the links in [_uploadText], disposed in [dispose].
+  final List<TapGestureRecognizer> _uploadLinkRecognizers = [];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    // didChangeDependencies can fire more than once (e.g. on a theme or locale
+    // change); drop the previous build's recognizers before creating new ones.
+    _disposeUploadLinkRecognizers();
+    _uploadText = injectLinksInText(
+      l10n.l_exported_can_be_uploaded_at(uploadOtpUri.host),
+      {uploadOtpUri.host: uploadOtpUri},
+      textStyle: theme.textTheme.bodySmall?.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+      linkStyle: TextStyle(
+        color: theme.colorScheme.primary,
+        decoration: TextDecoration.underline,
+      ),
+      recognizers: _uploadLinkRecognizers,
+    );
+  }
+
+  void _disposeUploadLinkRecognizers() {
+    for (final recognizer in _uploadLinkRecognizers) {
+      recognizer.dispose();
+    }
+    _uploadLinkRecognizers.clear();
+  }
 
   @override
   void dispose() {
@@ -95,7 +141,14 @@ class _ConfigureYubiOtpDialogState
     _secretFocus.dispose();
     _publicIdFocus.dispose();
     _privateIdFocus.dispose();
+    _disposeUploadLinkRecognizers();
     super.dispose();
+  }
+
+  void _removeFocus() {
+    _publicIdFocus.unfocus();
+    _privateIdFocus.unfocus();
+    _secretFocus.unfocus();
   }
 
   @override
@@ -117,52 +170,56 @@ class _ConfigureYubiOtpDialogState
     final publicIdFormatValid = Format.modhex.isValid(publicId);
 
     final outputFile = ref.read(yubiOtpOutputProvider);
-
-    _createUploadText(context, l10n);
+    final exportSelected = isAndroid ? _exportRequested : outputFile != null;
 
     void submit() async {
-      bool hasError = false;
+      _removeFocus();
+
+      // The first field that failed validation, refocused so the user can
+      // correct it.
+      FocusNode? invalidField;
 
       if (publicId.isEmpty) {
         _publicIdError = l10n.l_field_required;
-        hasError = true;
+        invalidField ??= _publicIdFocus;
       } else if (!publicIdFormatValid) {
         _publicIdError = l10n.l_invalid_format_allowed_chars(
           Format.modhex.allowedCharacters,
         );
-        hasError = true;
+        invalidField ??= _publicIdFocus;
       } else if (!publicIdLengthValid) {
         _publicIdError = l10n.s_invalid_length;
-        hasError = true;
+        invalidField ??= _publicIdFocus;
       }
 
       if (privateId.isEmpty) {
         _privateIdError = l10n.l_field_required;
-        hasError = true;
+        invalidField ??= _privateIdFocus;
       } else if (!privateIdFormatValid) {
         _privateIdError = l10n.l_invalid_format_allowed_chars(
           Format.hex.allowedCharacters,
         );
-        hasError = true;
+        invalidField ??= _privateIdFocus;
       } else if (!privateIdLengthValid) {
         _privateIdError = l10n.s_invalid_length;
-        hasError = true;
+        invalidField ??= _privateIdFocus;
       }
 
       if (secret.isEmpty) {
         _secretError = l10n.l_field_required;
-        hasError = true;
+        invalidField ??= _secretFocus;
       } else if (!secretFormatValid) {
         _secretError = l10n.l_invalid_format_allowed_chars(
           Format.hex.allowedCharacters,
         );
-        hasError = true;
+        invalidField ??= _secretFocus;
       } else if (!secretLengthValid) {
         _secretError = l10n.s_invalid_length;
-        hasError = true;
+        invalidField ??= _secretFocus;
       }
 
-      if (hasError) {
+      if (invalidField != null) {
+        invalidField.requestFocus();
         setState(() {});
         return;
       }
@@ -188,6 +245,9 @@ class _ConfigureYubiOtpDialogState
           configuration: configuration,
         );
         configurationSucceeded = true;
+      } on CancellationException {
+        // The user dismissed the NFC overlay, this is not an access code failure.
+        return;
       } catch (e) {
         _log.error('Failed to program credential', e);
         // Access code required
@@ -210,19 +270,40 @@ class _ConfigureYubiOtpDialogState
         });
       }
 
-      if (configurationSucceeded) {
-        if (outputFile != null) {
-          final csv = await otpNotifier.formatYubiOtpCsv(
-            info!.serial!,
-            publicId,
-            privateId,
-            secret,
-          );
+      // The CSV starts with the serial, so a key that does not report one cannot be
+      // exported. Guard here rather than on the export chip: over NFC the serial is
+      // unknown until the tap, which is after the dialog is built.
+      final serial = info?.serial;
+      String? exportedFileName;
+      if (configurationSucceeded && exportSelected && serial != null) {
+        final csv = await otpNotifier.formatYubiOtpCsv(
+          serial,
+          publicId,
+          privateId,
+          secret,
+        );
 
-          await outputFile.writeAsString(
+        if (isAndroid) {
+          // Only now, with the CSV in hand, can the destination be picked: the SAF dialog
+          // both creates the document and writes to it in one shot.
+          final fileName = 'yubico-otp-$publicId.csv';
+          final savedPath = await FilePicker.platform.saveFile(
+            dialogTitle: l10n.l_export_configuration_file,
+            allowedExtensions: ['csv'],
+            fileName: fileName,
+            type: FileType.custom,
+            bytes: utf8.encode('$csv\n'),
+          );
+          // A null path means the user backed out of the save dialog. SAF returns an
+          // opaque content:// URI rather than a filesystem path, so surface the name we
+          // asked it to write instead of parsing the returned location.
+          exportedFileName = savedPath != null ? fileName : null;
+        } else {
+          await outputFile!.writeAsString(
             '$csv${Platform.lineTerminator}',
             mode: FileMode.append,
           );
+          exportedFileName = outputFile.uri.pathSegments.last;
         }
       }
       await ref.read(withContextProvider)((context) async {
@@ -230,10 +311,10 @@ class _ConfigureYubiOtpDialogState
         if (configurationSucceeded) {
           showMessage(
             context,
-            outputFile != null
+            exportedFileName != null
                 ? l10n.l_slot_credential_configured_and_exported(
                     l10n.s_capability_otp,
-                    outputFile.uri.pathSegments.last,
+                    exportedFileName,
                   )
                 : l10n.l_slot_credential_configured(l10n.s_capability_otp),
           );
@@ -325,7 +406,7 @@ class _ConfigureYubiOtpDialogState
                         });
                       },
                       onSubmitted: (_) {
-                        if (publicIdLengthValid) {
+                        if (publicId.isNotEmpty) {
                           _privateIdFocus.requestFocus();
                         } else {
                           _publicIdFocus.requestFocus();
@@ -377,7 +458,7 @@ class _ConfigureYubiOtpDialogState
                         });
                       },
                       onSubmitted: (_) {
-                        if (privateIdLengthValid) {
+                        if (privateId.isNotEmpty) {
                           _secretFocus.requestFocus();
                         } else {
                           _privateIdFocus.requestFocus();
@@ -420,7 +501,7 @@ class _ConfigureYubiOtpDialogState
                           },
                         ),
                       ),
-                      textInputAction: .next,
+                      textInputAction: .done,
                       onChanged: (value) {
                         setState(() {
                           _secretError = null;
@@ -460,9 +541,13 @@ class _ConfigureYubiOtpDialogState
                                 },
                               ),
                               ChoiceFilterChip<OutputActions>(
-                                tooltip: outputFile?.path ?? l10n.s_no_export,
-                                selected: outputFile != null,
-                                avatar: outputFile != null
+                                tooltip:
+                                    outputFile?.path ??
+                                    (exportSelected
+                                        ? l10n.l_export_configuration_file
+                                        : l10n.s_no_export),
+                                selected: exportSelected,
+                                avatar: exportSelected
                                     ? Icon(
                                         Symbols.check,
                                         color: Theme.of(
@@ -484,6 +569,8 @@ class _ConfigureYubiOtpDialogState
                                     child: Text(
                                       fileName != null
                                           ? '${l10n.s_export} $fileName'
+                                          : exportSelected
+                                          ? l10n.s_export
                                           : _action.getDisplayName(l10n),
                                       overflow: .ellipsis,
                                     ),
@@ -496,10 +583,16 @@ class _ConfigureYubiOtpDialogState
                                         .setOutput(null);
                                     setState(() {
                                       _action = value;
+                                      _exportRequested = false;
                                     });
                                   } else if (value ==
                                       OutputActions.selectFile) {
-                                    if (await selectFile()) {
+                                    if (isAndroid) {
+                                      setState(() {
+                                        _action = value;
+                                        _exportRequested = true;
+                                      });
+                                    } else if (await selectFile()) {
                                       setState(() {
                                         _action = value;
                                       });
@@ -512,7 +605,7 @@ class _ConfigureYubiOtpDialogState
                         ),
                       ],
                     ),
-                    _createUploadText(context, l10n),
+                    _uploadText,
                   ]
                   .map(
                     (e) => Padding(
@@ -523,43 +616,6 @@ class _ConfigureYubiOtpDialogState
                   .toList(),
         ),
       ),
-    );
-  }
-
-  RichText _createUploadText(BuildContext context, AppLocalizations l10n) {
-    final uploadText = l10n.l_exported_can_be_uploaded_at(uploadOtpUri.host);
-    final host = uploadOtpUri.host;
-    final parts = uploadText.split(RegExp('(?=$host)|(?<=$host)'));
-
-    return RichText(
-      textScaler: MediaQuery.textScalerOf(context),
-      text: TextSpan(
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
-        children: [
-          ...parts.map(
-            (e) => e == uploadOtpUri.host
-                ? _createUploadOtpLink(context)
-                : TextSpan(text: e),
-          ),
-        ],
-      ),
-    );
-  }
-
-  TextSpan _createUploadOtpLink(BuildContext context) {
-    final theme = Theme.of(context);
-    return TextSpan(
-      text: uploadOtpUri.host,
-      style: theme.textTheme.bodySmall?.copyWith(
-        color: theme.colorScheme.primary,
-        decoration: TextDecoration.underline,
-      ),
-      recognizer: TapGestureRecognizer()
-        ..onTap = () async {
-          await launchUrl(uploadOtpUri, mode: LaunchMode.externalApplication);
-        },
     );
   }
 }

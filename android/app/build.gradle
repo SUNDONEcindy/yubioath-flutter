@@ -106,7 +106,6 @@ spotless {
     kotlin {
         target("**/*.kt")
         targetExclude("**/generated/*.kt")
-        targetExclude("src/**/ndef/**KeyboardLayout.kt")
         ktlint().editorConfigOverride([ktlint_code_style: "android_studio"])
     }
 
@@ -124,6 +123,7 @@ dependencies {
     api "com.yubico.yubikit:fido:$project.yubiKitVersion"
     api "com.yubico.yubikit:piv:$project.yubiKitVersion"
     api "com.yubico.yubikit:support:$project.yubiKitVersion"
+    api "com.yubico.yubikit:yubiotp:$project.yubiKitVersion"
 
     implementation 'org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0'
 
