@@ -89,6 +89,7 @@ kotlin {
 
 apply from: "signing.gradle"
 apply from: "collect_licenses.gradle"
+apply from: "permission_guard.gradle.kts"
 
 android.applicationVariants.all { variant ->
     variant.outputs.each { output ->
